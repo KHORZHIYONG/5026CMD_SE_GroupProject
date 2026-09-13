@@ -1,0 +1,325 @@
+﻿@page "/Admin/Dashboard"
+@model ResROMS.Pages.Admin.DashboardModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ResROMS</title>
+
+    <!-- Bootstrap 5 & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <!-- Google Fonts: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+            body {
+                font-family: 'Outfit', sans-serif;
+                background-color: #f4f7f6;
+                margin: 0;
+                overflow-x: hidden;
+                display: flex;
+            }
+
+            /* Sidebar Styling */
+            .sidebar {
+                width: 260px;
+                background-color: #121418; /* Matches your login background */
+                min-height: 100vh;
+                color: #fff;
+                position: fixed;
+                display: flex;
+                flex-direction: column;
+                transition: all 0.3s;
+            }
+
+            .sidebar-brand {
+                padding: 20px;
+                font-size: 1.8rem;
+                font-weight: 700;
+                text-align: center;
+                background: linear-gradient(135deg, #e85d04, #fca311);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+                margin-bottom: 20px;
+            }
+
+            .nav-link {
+                color: #a0aec0;
+                padding: 12px 25px;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                transition: all 0.2s;
+            }
+
+                .nav-link:hover, .nav-link.active {
+                    color: #ffffff;
+                    background: rgba(255, 255, 255, 0.05);
+                    border-left: 4px solid #e85d04;
+                }
+
+                .nav-link i {
+                    font-size: 1.2rem;
+                }
+
+            /* Main Content */
+            .main-content {
+                margin-left: 260px;
+                flex-grow: 1;
+                padding: 30px;
+                width: calc(100% - 260px);
+            }
+
+            /* Top Navbar */
+            .top-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 30px;
+            }
+
+            .page-title {
+                font-size: 1.8rem;
+                font-weight: 700;
+                color: #2d3748;
+                margin: 0;
+            }
+
+            .user-profile {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-weight: 600;
+                color: #4a5568;
+            }
+
+            .profile-img {
+                width: 40px;
+                height: 40px;
+                background-color: #e85d04;
+                color: white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+            }
+
+            /* Action Cards (Modules) */
+            .module-card {
+                background: #ffffff;
+                border: none;
+                border-radius: 12px;
+                padding: 24px;
+                height: 100%;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+                transition: transform 0.2s, box-shadow 0.2s;
+                display: flex;
+                flex-direction: column;
+            }
+
+                .module-card:hover {
+                    transform: translateY(-5px);
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+                }
+
+            .module-icon {
+                width: 50px;
+                height: 50px;
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.5rem;
+                margin-bottom: 15px;
+            }
+
+            .module-title {
+                font-size: 1.1rem;
+                font-weight: 700;
+                color: #2d3748;
+                margin-bottom: 8px;
+            }
+
+            .module-desc {
+                font-size: 0.9rem;
+                color: #718096;
+                flex-grow: 1;
+            }
+
+            .module-link {
+                text-decoration: none;
+                color: #e85d04;
+                font-weight: 600;
+                font-size: 0.9rem;
+                margin-top: 15px;
+                display: inline-block;
+            }
+
+                .module-link:hover {
+                    color: #dc2f02;
+                }
+
+            /* Icon Colors */
+            .bg-orange {
+                background: rgba(232, 93, 4, 0.1);
+                color: #e85d04;
+            }
+
+            .bg-blue {
+                background: rgba(49, 130, 206, 0.1);
+                color: #3182ce;
+            }
+
+            .bg-green {
+                background: rgba(56, 161, 105, 0.1);
+                color: #38a169;
+            }
+
+            .bg-purple {
+                background: rgba(128, 90, 213, 0.1);
+                color: #805ad5;
+            }
+
+            .bg-red {
+                background: rgba(229, 62, 62, 0.1);
+                color: #e53e3e;
+            }
+
+            .bg-teal {
+                background: rgba(49, 151, 149, 0.1);
+                color: #319795;
+            }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <div class="sidebar-brand">ResROMS</div>
+        <a href="#" class="nav-link active"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+        <a href="#" class="nav-link"><i class="bi bi-shop"></i> Restaurant Setup</a>
+        <a href="#" class="nav-link"><i class="bi bi-people-fill"></i> Accounts</a>
+        <a href="#" class="nav-link"><i class="bi bi-journal-richtext"></i> Menu & Pricing</a>
+        <a href="#" class="nav-link"><i class="bi bi-activity"></i> Live Monitor</a>
+        <a href="#" class="nav-link"><i class="bi bi-bar-chart-fill"></i> Reports</a>
+        <a href="#" class="nav-link"><i class="bi bi-megaphone-fill"></i> Campaigns</a>
+
+        <div style="margin-top: auto; padding-bottom: 20px;">
+            <a href="/Login" class="nav-link"><i class="bi bi-box-arrow-left"></i> Sign Out</a>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+        <header class="top-header">
+            <h1 class="page-title">Administrator Overview</h1>
+            <div class="user-profile">
+                <span>System Admin</span>
+                <div class="profile-img">SA</div>
+            </div>
+        </header>
+
+        <!-- Quick Summary Stats (Optional but good for dashboards) -->
+        <div class="row mb-4 g-3">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-3">
+                    <div class="text-muted small fw-bold">TODAY's RESERVATIONS</div>
+                    <div class="fs-3 fw-bold text-dark">24</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-3">
+                    <div class="text-muted small fw-bold">ACTIVE ORDERS</div>
+                    <div class="fs-3 fw-bold text-dark">12</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-3">
+                    <div class="text-muted small fw-bold">DAILY REVENUE</div>
+                    <div class="fs-3 fw-bold text-dark">$1,240</div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="mb-4" style="border-color: #cbd5e0;">
+
+        <!-- Management Modules Grid -->
+        <div class="row g-4">
+
+            <!-- (b) Restaurant Information -->
+            <div class="col-md-6 col-lg-4">
+                <div class="module-card">
+                    <div class="module-icon bg-orange"><i class="bi bi-shop"></i></div>
+                    <h3 class="module-title">Restaurant Info</h3>
+                    <p class="module-desc">Manage dining areas, table layouts, operating hours, and menu categories.</p>
+                    <a href="#" class="module-link">Manage Setup &rarr;</a>
+                </div>
+            </div>
+
+            <!-- (c) Account Management -->
+            <div class="col-md-6 col-lg-4">
+                <div class="module-card">
+                    <div class="module-icon bg-blue"><i class="bi bi-people"></i></div>
+                    <h3 class="module-title">Account Management</h3>
+                    <p class="module-desc">Handle customer and staff accounts, registrations, and system role assignments.</p>
+                    <a href="#" class="module-link">Manage Accounts &rarr;</a>
+                </div>
+            </div>
+
+            <!-- (d) Menu & Offers -->
+            <div class="col-md-6 col-lg-4">
+                <div class="module-card">
+                    <div class="module-icon bg-green"><i class="bi bi-journal-richtext"></i></div>
+                    <h3 class="module-title">Menu & Offers</h3>
+                    <p class="module-desc">Control menu items, update pricing, toggle availability, and set up promotions.</p>
+                    <a href="#" class="module-link">Manage Menu &rarr;</a>
+                </div>
+            </div>
+
+            <!-- (e) Live Monitoring -->
+            <div class="col-md-6 col-lg-4">
+                <div class="module-card">
+                    <div class="module-icon bg-red"><i class="bi bi-activity"></i></div>
+                    <h3 class="module-title">Live Monitor</h3>
+                    <p class="module-desc">Real-time tracking of table reservations, customer POS orders, and payment transactions.</p>
+                    <a href="#" class="module-link">View Live Ops &rarr;</a>
+                </div>
+            </div>
+
+            <!-- (f) Reports & Analytics -->
+            <div class="col-md-6 col-lg-4">
+                <div class="module-card">
+                    <div class="module-icon bg-purple"><i class="bi bi-pie-chart"></i></div>
+                    <h3 class="module-title">Reports & Analytics</h3>
+                    <p class="module-desc">Generate statistics on sales, popular dishes, reservation trends, and staff activity.</p>
+                    <a href="#" class="module-link">Generate Reports &rarr;</a>
+                </div>
+            </div>
+
+            <!-- (g) Settings & Campaigns -->
+            <div class="col-md-6 col-lg-4">
+                <div class="module-card">
+                    <div class="module-icon bg-teal"><i class="bi bi-megaphone"></i></div>
+                    <h3 class="module-title">System & Campaigns</h3>
+                    <p class="module-desc">Broadcast system announcements, manage marketing campaigns, and global settings.</p>
+                    <a href="#" class="module-link">System Settings &rarr;</a>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+</body>
+</html>

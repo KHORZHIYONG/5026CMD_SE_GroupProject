@@ -108,6 +108,23 @@
                     width: 100%;
                 }
 
+                    /* Fix the white background on click/focus */
+                    .input-wrapper input:focus {
+                        background-color: transparent !important;
+                        color: #ffffff !important;
+                        box-shadow: none !important;
+                        outline: none !important;
+                    }
+
+                    /* Fix browser autofill turning the input white/yellow */
+                    .input-wrapper input:-webkit-autofill,
+                    .input-wrapper input:-webkit-autofill:hover,
+                    .input-wrapper input:-webkit-autofill:focus,
+                    .input-wrapper input:-webkit-autofill:active {
+                        -webkit-text-fill-color: #ffffff !important;
+                        transition: background-color 5000s ease-in-out 0s;
+                    }
+
                     .input-wrapper input::placeholder {
                         color: #6b7280;
                     }
