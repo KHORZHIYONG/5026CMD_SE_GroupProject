@@ -31,13 +31,14 @@
             /* Sidebar Styling */
             .sidebar {
                 width: 260px;
-                background-color: #121418; /* Matches your login background */
+                background-color: #121418;
                 min-height: 100vh;
                 color: #fff;
                 position: fixed;
                 display: flex;
                 flex-direction: column;
                 transition: all 0.3s;
+                z-index: 1000;
             }
 
             .sidebar-brand {
@@ -60,6 +61,7 @@
                 align-items: center;
                 gap: 12px;
                 transition: all 0.2s;
+                text-decoration: none;
             }
 
                 .nav-link:hover, .nav-link.active {
@@ -115,7 +117,7 @@
                 font-weight: bold;
             }
 
-            /* Action Cards (Modules) */
+            /* Module Cards */
             .module-card {
                 background: #ffffff;
                 border: none;
@@ -200,6 +202,12 @@
                 background: rgba(49, 151, 149, 0.1);
                 color: #319795;
             }
+
+            .chart-container {
+                position: relative;
+                height: 300px;
+                width: 100%;
+            }
     </style>
 </head>
 <body>
@@ -231,34 +239,52 @@
             </div>
         </header>
 
-        <!-- Quick Summary Stats (Optional but good for dashboards) -->
+        <!-- KPI Summary Cards -->
         <div class="row mb-4 g-3">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card border-0 shadow-sm p-3">
-                    <div class="text-muted small fw-bold">TODAY's RESERVATIONS</div>
-                    <div class="fs-3 fw-bold text-dark">24</div>
+                    <div class="text-muted small fw-bold">TODAY'S RESERVATIONS</div>
+                    <div class="fs-2 fw-bold text-dark">34</div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card border-0 shadow-sm p-3">
                     <div class="text-muted small fw-bold">ACTIVE ORDERS</div>
-                    <div class="fs-3 fw-bold text-dark">12</div>
+                    <div class="fs-2 fw-bold text-dark">12</div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card border-0 shadow-sm p-3">
-                    <div class="text-muted small fw-bold">DAILY REVENUE</div>
-                    <div class="fs-3 fw-bold text-dark">$1,240</div>
+                    <div class="text-muted small fw-bold">TODAY'S REVENUE</div>
+                    <div class="fs-2 fw-bold text-success">$1,840.50</div>
                 </div>
             </div>
         </div>
 
-        <hr class="mb-4" style="border-color: #cbd5e0;">
+        <!-- Charts Row -->
+        <div class="row mb-4 g-4">
+            <!-- Line Chart: Revenue -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm p-4 h-100">
+                    <h5 class="fw-bold text-dark mb-3">Weekly Revenue Overview</h5>
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- Doughnut Chart: Reservations -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm p-4 h-100">
+                    <h5 class="fw-bold text-dark mb-3">Today's Tables</h5>
+                    <div class="chart-container d-flex align-items-center justify-content-center">
+                        <canvas id="reservationsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Management Modules Grid -->
         <div class="row g-4">
-
-            <!-- (b) Restaurant Information -->
             <div class="col-md-6 col-lg-4">
                 <div class="module-card">
                     <div class="module-icon bg-orange"><i class="bi bi-shop"></i></div>
@@ -267,8 +293,6 @@
                     <a href="#" class="module-link">Manage Setup &rarr;</a>
                 </div>
             </div>
-
-            <!-- (c) Account Management -->
             <div class="col-md-6 col-lg-4">
                 <div class="module-card">
                     <div class="module-icon bg-blue"><i class="bi bi-people"></i></div>
@@ -277,8 +301,6 @@
                     <a href="#" class="module-link">Manage Accounts &rarr;</a>
                 </div>
             </div>
-
-            <!-- (d) Menu & Offers -->
             <div class="col-md-6 col-lg-4">
                 <div class="module-card">
                     <div class="module-icon bg-green"><i class="bi bi-journal-richtext"></i></div>
@@ -287,8 +309,6 @@
                     <a href="#" class="module-link">Manage Menu &rarr;</a>
                 </div>
             </div>
-
-            <!-- (e) Live Monitoring -->
             <div class="col-md-6 col-lg-4">
                 <div class="module-card">
                     <div class="module-icon bg-red"><i class="bi bi-activity"></i></div>
@@ -297,8 +317,6 @@
                     <a href="#" class="module-link">View Live Ops &rarr;</a>
                 </div>
             </div>
-
-            <!-- (f) Reports & Analytics -->
             <div class="col-md-6 col-lg-4">
                 <div class="module-card">
                     <div class="module-icon bg-purple"><i class="bi bi-pie-chart"></i></div>
@@ -307,8 +325,6 @@
                     <a href="#" class="module-link">Generate Reports &rarr;</a>
                 </div>
             </div>
-
-            <!-- (g) Settings & Campaigns -->
             <div class="col-md-6 col-lg-4">
                 <div class="module-card">
                     <div class="module-icon bg-teal"><i class="bi bi-megaphone"></i></div>
@@ -317,9 +333,92 @@
                     <a href="#" class="module-link">System Settings &rarr;</a>
                 </div>
             </div>
-
         </div>
     </main>
 
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+            // Set default font to match the dashboard
+            Chart.defaults.font.family = "'Outfit', sans-serif";
+            Chart.defaults.color = '#718096';
+
+            // --- 1. Revenue Line Chart ---
+            const revCtx = document.getElementById('revenueChart').getContext('2d');
+
+            // Create a nice gradient fill for the line chart
+            let gradient = revCtx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(232, 93, 4, 0.4)'); // Brand Orange
+            gradient.addColorStop(1, 'rgba(232, 93, 4, 0.0)');
+
+            new Chart(revCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Revenue ($)',
+                        data: [1200, 1900, 1500, 2200, 3100, 4200, 3800],
+                        borderColor: '#e85d04',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#e85d04',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        fill: true,
+                        tension: 0.4 // Makes the line curved/smooth
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { borderDash: [5, 5], color: '#e2e8f0' },
+                            border: { display: false }
+                        },
+                        x: {
+                            grid: { display: false },
+                            border: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // --- 2. Reservations Doughnut Chart ---
+            const resCtx = document.getElementById('reservationsChart').getContext('2d');
+            new Chart(resCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Occupied', 'Reserved', 'Available'],
+                    datasets: [{
+                        data: [12, 8, 15],
+                        backgroundColor: [
+                            '#e85d04', // Brand Orange
+                            '#fca311', // Yellow/Gold
+                            '#e2e8f0'  // Light Gray
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%', // Makes the doughnut thinner
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 20, usePointStyle: true }
+                        }
+                    }
+                }
+            });
+    </script>
 </body>
 </html>
