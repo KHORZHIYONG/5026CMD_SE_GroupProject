@@ -109,7 +109,9 @@
         </a>
         <a href="#" class="nav-link"><i class="bi bi-activity"></i> Live Monitor</a>
         <a href="#" class="nav-link"><i class="bi bi-bar-chart-fill"></i> Reports</a>
-        <a href="#" class="nav-link"><i class="bi bi-megaphone-fill"></i> Campaigns</a>
+        <a href="/Admin/Campaigns" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Campaigns" ? "active" : "")">
+            <i class="bi bi-megaphone"></i> <span class="nav-text">Campaigns</span>
+        </a>
 
         <div style="margin-top: auto; padding-bottom: 20px;">
             <a href="/Login" class="nav-link"><i class="bi bi-box-arrow-left"></i> Sign Out</a>
