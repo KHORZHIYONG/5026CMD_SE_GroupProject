@@ -98,7 +98,9 @@
         <a href="/Admin/Tables" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Tables" ? "active" : "")">
             <i class="bi bi-diagram-3"></i> <span class="nav-text">Tables & Layout</span>
         </a>
-        <a href="#" class="nav-link"><i class="bi bi-people-fill"></i> Accounts</a>
+        <a href="/Admin/Accounts" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Accounts" ? "active" : "")">
+            <i class="bi bi-people-fill"></i> <span class="nav-text">Accounts</span>
+        </a>
         <a href="/Admin/Menu" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Menu" ? "active" : "")">
             <i class="bi bi-journal-richtext"></i> <span class="nav-text">Menu & Pricing</span>
         </a>
