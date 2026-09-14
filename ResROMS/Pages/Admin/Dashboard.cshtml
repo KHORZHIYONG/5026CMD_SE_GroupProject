@@ -1,0 +1,265 @@
+﻿@page "/Admin/Dashboard"
+@model ResROMS.Pages.Admin.DashboardModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+@section Styles {
+    <style>
+        .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .profile-img {
+            width: 40px;
+            height: 40px;
+            background-color: #e85d04;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .module-card {
+            background: #ffffff;
+            border: none;
+            border-radius: 12px;
+            padding: 24px;
+            height: 100%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+            .module-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            }
+
+        .module-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+
+        .module-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .module-desc {
+            font-size: 0.9rem;
+            color: #718096;
+            flex-grow: 1;
+        }
+
+        .module-link {
+            text-decoration: none;
+            color: #e85d04;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-top: 15px;
+            display: inline-block;
+        }
+
+            .module-link:hover {
+                color: #dc2f02;
+            }
+
+        .bg-orange {
+            background: rgba(232, 93, 4, 0.1);
+            color: #e85d04;
+        }
+
+        .bg-blue {
+            background: rgba(49, 130, 206, 0.1);
+            color: #3182ce;
+        }
+
+        .bg-green {
+            background: rgba(56, 161, 105, 0.1);
+            color: #38a169;
+        }
+
+        .bg-purple {
+            background: rgba(128, 90, 213, 0.1);
+            color: #805ad5;
+        }
+
+        .bg-red {
+            background: rgba(229, 62, 62, 0.1);
+            color: #e53e3e;
+        }
+
+        .bg-teal {
+            background: rgba(49, 151, 149, 0.1);
+            color: #319795;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+    </style>
+}
+
+<header class="top-header">
+    <h1 class="page-title">Administrator Overview</h1>
+    <div class="user-profile">
+        <span>System Admin</span>
+        <div class="profile-img">SA</div>
+    </div>
+</header>
+
+<!-- KPI Summary Cards -->
+<div class="row mb-4 g-3">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="text-muted small fw-bold">TODAY'S RESERVATIONS</div>
+            <div class="fs-2 fw-bold text-dark">34</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="text-muted small fw-bold">ACTIVE ORDERS</div>
+            <div class="fs-2 fw-bold text-dark">12</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="text-muted small fw-bold">TODAY'S REVENUE</div>
+            <div class="fs-2 fw-bold text-success">$1,840.50</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4 g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm p-4 h-100">
+            <h5 class="fw-bold text-dark mb-3">Weekly Revenue Overview</h5>
+            <div class="chart-container">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm p-4 h-100">
+            <h5 class="fw-bold text-dark mb-3">Today's Tables</h5>
+            <div class="chart-container d-flex align-items-center justify-content-center">
+                <canvas id="reservationsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Management Modules Grid -->
+<div class="row g-4">
+    <div class="col-md-6 col-lg-4">
+        <div class="module-card">
+            <div class="module-icon bg-orange"><i class="bi bi-shop"></i></div>
+            <h3 class="module-title">Restaurant Info</h3>
+            <p class="module-desc">Manage dining areas, table layouts, operating hours, and menu categories.</p>
+            <a href="/Admin/RestaurantInfo" class="module-link">Manage Setup &rarr;</a>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="module-card">
+            <div class="module-icon bg-blue"><i class="bi bi-people"></i></div>
+            <h3 class="module-title">Account Management</h3>
+            <p class="module-desc">Handle customer and staff accounts, registrations, and system role assignments.</p>
+            <a href="#" class="module-link">Manage Accounts &rarr;</a>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="module-card">
+            <div class="module-icon bg-green"><i class="bi bi-journal-richtext"></i></div>
+            <h3 class="module-title">Menu & Offers</h3>
+            <p class="module-desc">Control menu items, update pricing, toggle availability, and set up promotions.</p>
+            <a href="#" class="module-link">Manage Menu &rarr;</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        Chart.defaults.font.family = "'Outfit', sans-serif";
+        Chart.defaults.color = '#718096';
+
+        // Revenue Line Chart
+        const revCtx = document.getElementById('revenueChart').getContext('2d');
+        let gradient = revCtx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(232, 93, 4, 0.4)');
+        gradient.addColorStop(1, 'rgba(232, 93, 4, 0.0)');
+
+        new Chart(revCtx, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Revenue ($)',
+                    data: [1200, 1900, 1500, 2200, 3100, 4200, 3800],
+                    borderColor: '#e85d04',
+                    backgroundColor: gradient,
+                    borderWidth: 3,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#e85d04',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { borderDash: [5, 5], color: '#e2e8f0' }, border: { display: false } },
+                    x: { grid: { display: false }, border: { display: false } }
+                }
+            }
+        });
+
+        // Reservations Doughnut Chart
+        const resCtx = document.getElementById('reservationsChart').getContext('2d');
+        new Chart(resCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Occupied', 'Reserved', 'Available'],
+                datasets: [{
+                    data: [12, 8, 15],
+                    backgroundColor: ['#e85d04', '#fca311', '#e2e8f0'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '75%',
+                plugins: { legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true } } }
+            }
+        });
+    </script>
+}

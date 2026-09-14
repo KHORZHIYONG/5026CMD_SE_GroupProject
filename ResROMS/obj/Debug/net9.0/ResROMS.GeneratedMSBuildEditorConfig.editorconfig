@@ -1,0 +1,89 @@
+is_global = true
+build_property.TargetFramework = net9.0
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = true
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = 
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.RootNamespace = ResROMS
+build_property.RootNamespace = ResROMS
+build_property.ProjectDir = C:\Users\edw4r\OneDrive\Documents\INTI College Penang\SEMESTER 02\SOFTWARE ENGINEERING\ASSIGNMENT\ResROMS\ResROMS\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.RazorLangVersion = 9.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = C:\Users\edw4r\OneDrive\Documents\INTI College Penang\SEMESTER 02\SOFTWARE ENGINEERING\ASSIGNMENT\ResROMS\ResROMS
+build_property._RazorSourceGeneratorDebug = 
+build_property.EffectiveAnalysisLevelStyle = 9.0
+build_property.EnableCodeStyleSeverity = 
+
+[C:/Users/edw4r/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Admin/Accounts.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cQWNjb3VudHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/edw4r/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Admin/Campaigns.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cQ2FtcGFpZ25zLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/edw4r/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Admin/Dashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cRGFzaGJvYXJkLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/edw4r/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Admin/Menu.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cTWVudS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/edw4r/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Admin/Orders.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cT3JkZXJzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/edw4r/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Admin/RestaurantInfo.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cUmVzdGF1cmFudEluZm8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/edw4r/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Admin/Tables.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cVGFibGVzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/edw4r/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Admin/_ViewStart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cX1ZpZXdTdGFydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/edw4r/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Error.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRXJyb3IuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/edw4r/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/edw4r/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Login.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTG9naW4uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/edw4r/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Privacy.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUHJpdmFjeS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/edw4r/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Shared/_AdminLayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXF9BZG1pbkxheW91dC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/edw4r/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Shared/_ValidationScriptsPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/edw4r/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Shared/_ViewStart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXF9WaWV3U3RhcnQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/edw4r/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/_ViewImports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/edw4r/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Shared/_Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXF9MYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = b-x1fzr7ffur

@@ -1,0 +1,186 @@
+﻿@page "/Admin/RestaurantInfo"
+@model ResROMS.Pages.Admin.RestaurantInfoModel
+@{
+    ViewData["Title"] = "Restaurant Setup";
+}
+
+@section Styles {
+    <style>
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 25px;
+        }
+
+        /* Tab Customization */
+        .nav-tabs .nav-link {
+            color: #718096;
+            font-weight: 500;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 12px 20px;
+            margin-bottom: -1px;
+        }
+
+            .nav-tabs .nav-link:hover {
+                border-color: transparent;
+                color: #e85d04;
+            }
+
+            .nav-tabs .nav-link.active {
+                color: #e85d04;
+                background: transparent;
+                border-color: transparent;
+                border-bottom: 3px solid #e85d04;
+            }
+
+        .tab-card {
+            background: #ffffff;
+            border-radius: 0 0 12px 12px;
+            border-top-right-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            padding: 30px;
+            border: none;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary-custom {
+            background-color: #e85d04;
+            border: none;
+            padding: 10px 25px;
+            font-weight: 600;
+            border-radius: 8px;
+            color: white;
+        }
+
+            .btn-primary-custom:hover {
+                background-color: #dc2f02;
+                color: white;
+            }
+    </style>
+}
+
+<h1 class="page-title">Restaurant Setup</h1>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Nav Tabs -->
+<ul class="nav nav-tabs" id="setupTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">General Info</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="hours-tab" data-bs-toggle="tab" data-bs-target="#hours" type="button" role="tab">Operating Hours</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="areas-tab" data-bs-toggle="tab" data-bs-target="#areas" type="button" role="tab">Dining Areas & Tables</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="categories-tab" data-bs-toggle="tab" data-bs-target="#categories" type="button" role="tab">Menu Categories</button>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content tab-card" id="setupTabsContent">
+
+    <!-- 1. General Info Tab -->
+    <div class="tab-pane fade show active" id="general" role="tabpanel">
+        <h4 class="mb-4 text-dark fw-bold">Basic Information</h4>
+        <form method="post">
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <label asp-for="Input.Name" class="form-label"></label>
+                    <input asp-for="Input.Name" class="form-control" placeholder="e.g. The Rustic Spoon" />
+                    <span asp-validation-for="Input.Name" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.Phone" class="form-label"></label>
+                    <input asp-for="Input.Phone" class="form-control" placeholder="e.g. +1 234 567 8900" />
+                    <span asp-validation-for="Input.Phone" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.Email" class="form-label"></label>
+                    <input asp-for="Input.Email" class="form-control" placeholder="contact@restaurant.com" />
+                    <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                </div>
+                <div class="col-md-12">
+                    <label asp-for="Input.Address" class="form-label"></label>
+                    <textarea asp-for="Input.Address" class="form-control" rows="3" placeholder="Full physical address"></textarea>
+                    <span asp-validation-for="Input.Address" class="text-danger small"></span>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary-custom">Save Changes</button>
+        </form>
+    </div>
+
+    <!-- 2. Operating Hours Tab -->
+    <div class="tab-pane fade" id="hours" role="tabpanel">
+        <h4 class="mb-4 text-dark fw-bold">Operating Hours</h4>
+        <p class="text-muted mb-4">Set your standard opening and closing times. Leave fields blank if closed.</p>
+        <div class="row align-items-center mb-3">
+            <div class="col-md-2 fw-bold">Monday</div>
+            <div class="col-md-3"><input type="time" class="form-control" value="09:00"></div>
+            <div class="col-md-1 text-center">to</div>
+            <div class="col-md-3"><input type="time" class="form-control" value="22:00"></div>
+        </div>
+        <button type="button" class="btn btn-primary-custom mt-3">Update Hours</button>
+    </div>
+
+    <!-- 3. Dining Areas Tab -->
+    <div class="tab-pane fade" id="areas" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="text-dark fw-bold mb-0">Dining Areas</h4>
+            <button class="btn btn-sm btn-outline-dark"><i class="bi bi-plus-lg"></i> Add New Area</button>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Area Name</th>
+                        <th>Capacity</th>
+                        <th>Total Tables</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Main Dining Room</td>
+                        <td>80 pax</td>
+                        <td>20</td>
+                        <td><button class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 4. Menu Categories Tab -->
+    <div class="tab-pane fade" id="categories" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="text-dark fw-bold mb-0">Menu Categories</h4>
+            <button class="btn btn-sm btn-outline-dark"><i class="bi bi-plus-lg"></i> Add Category</button>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <span class="badge bg-secondary p-2 fs-6">Appetizers</span>
+            <span class="badge bg-secondary p-2 fs-6">Main Course</span>
+            <span class="badge bg-secondary p-2 fs-6">Desserts</span>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
+}
