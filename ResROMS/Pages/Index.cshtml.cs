@@ -1,21 +1,22 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace ResROMS.Pages
-{
-    public class IndexModel : PageModel
-    {
-        public IActionResult OnGet()
-        {
-            // Check if the current user is NOT logged in
-            if (!User.Identity.IsAuthenticated)
-            {
-                // Redirect them to the Login page
-                return RedirectToPage("/Login");
-            }
+namespace ResROMS.Pages;
 
-            // If they are logged in, load the normal Index page
-            return Page();
-        }
+public class IndexModel : PageModel
+{
+    public IActionResult OnGet()
+    {
+        if (User.Identity?.IsAuthenticated != true)
+            return RedirectToPage("/Login");
+
+        if (User.IsInRole("Admin"))
+            return RedirectToPage("/Admin/Dashboard");
+
+        if (User.IsInRole("Customer"))
+            return RedirectToPage("/Customer/Reservations");
+
+        // Staff module is not implemented yet; don't show the ASP.NET demo page.
+        return RedirectToPage("/AccessDenied");
     }
 }

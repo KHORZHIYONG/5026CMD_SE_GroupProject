@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ResROMS")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+26a09448e45092e99b712aa06a9dfeab049fbb1d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c381ce1082c947af2b0a2058583db86d26989344")]
 [assembly: System.Reflection.AssemblyProductAttribute("ResROMS")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ResROMS")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

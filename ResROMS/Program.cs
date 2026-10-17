@@ -26,13 +26,23 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.LoginPath = "/Login";
         options.AccessDeniedPath = "/AccessDenied";
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        // Default lifetime. Login.cshtml.cs issues 15-minute Admin and
+        // 30-minute non-Admin tickets using AuthenticationProperties.ExpiresUtc.
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
         options.SlidingExpiration = true;
         options.Events.OnValidatePrincipal = async context =>
         {
             var idText = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
             var role = context.Principal?.FindFirstValue(ClaimTypes.Role);
             var versionText = context.Principal?.FindFirst("SecurityVersion")?.Value;
+            var sessionPolicyVersion = context.Principal?.FindFirst("SessionPolicyVersion")?.Value;
+
+            // Reject cookies issued by the older, 8-hour/Remember-Me login policy.
+            if (sessionPolicyVersion != "2")
+            {
+                await RejectAsync(context);
+                return;
+            }
 
             if (!int.TryParse(idText, out var id) || !int.TryParse(versionText, out var version))
             {
@@ -83,7 +93,55 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthentication();
+
+// The root URL is a navigation entry point, never the ASP.NET template page.
+// Run this AFTER authentication so existing valid login cookies are recognized,
+// and BEFORE Razor Pages endpoints so a stale Index view cannot render here.
+app.Use(async (context, next) =>
+{
+    if (HttpMethods.IsGet(context.Request.Method) && context.Request.Path == "/")
+    {
+        // Prevent older home-page responses being reused from the HTTP cache.
+        context.Response.Headers.CacheControl = "no-store, no-cache, max-age=0";
+        context.Response.Headers.Pragma = "no-cache";
+        context.Response.Headers.Expires = "0";
+
+        var target = context.User.Identity?.IsAuthenticated != true
+            ? "/Login"
+            : context.User.IsInRole("Admin")
+                ? "/Admin/Dashboard"
+                : context.User.IsInRole("Customer")
+                    ? "/Customer/Reservations"
+                    : "/AccessDenied";
+
+        context.Response.Redirect(target);
+        return;
+    }
+
+    await next();
+});
+
 app.UseAuthorization();
+
+// Avoid keeping sensitive pages in the browser's normal HTTP cache.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/Admin") ||
+        context.Request.Path.StartsWithSegments("/Customer"))
+    {
+        context.Response.Headers.CacheControl = "no-store, no-cache, max-age=0";
+        context.Response.Headers.Pragma = "no-cache";
+        context.Response.Headers.Expires = "0";
+    }
+
+    await next();
+});
+
+// A lightweight protected request refreshes sliding expiration ONLY while
+// an Administrator is actively using a page (see _AdminLayout.cshtml).
+app.MapGet("/auth/keepalive", () => Results.NoContent())
+    .RequireAuthorization("AdminOnly");
+
 app.MapStaticAssets();
 app.MapRazorPages().WithStaticAssets();
 app.Run();

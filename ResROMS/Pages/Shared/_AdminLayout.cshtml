@@ -177,6 +177,9 @@
         </div>
     </nav>
 
+    <!-- POST-only idle sign-out. The Razor form tag helper supplies an anti-forgery token. -->
+    <form method="post" asp-page="/Logout" id="idleLogoutForm" hidden></form>
+
     <!-- Main Body injected from child pages -->
     <main class="main-content" id="mainContent">
         @RenderBody()
@@ -192,6 +195,102 @@
                 document.getElementById('mainSidebar').classList.toggle('collapsed');
                 document.getElementById('mainContent').classList.toggle('expanded');
             });
+    </script>
+
+    <!-- Administrator inactivity control. Server-side cookie expiration is authoritative. -->
+    <script>
+        (() => {
+            const idleLimitMs = 15 * 60 * 1000;
+            const keepAliveIntervalMs = 4 * 60 * 1000;
+            const recentActivityMs = 60 * 1000;
+            const activityKey = 'ResROMS.Admin.LastActivity';
+            const logoutForm = document.getElementById('idleLogoutForm');
+            let lastActivity = Date.now();
+            let lastStoredActivity = 0;
+            let lastKeepAlive = Date.now();
+            let signingOut = false;
+            let pingInProgress = false;
+
+            // Only an activity timestamp is shared between tabs. Never store a token.
+            const readLastActivity = () => {
+                try {
+                    const stored = Number(localStorage.getItem(activityKey));
+                    return Math.max(lastActivity, Number.isFinite(stored) ? stored : 0);
+                } catch {
+                    return lastActivity;
+                }
+            };
+
+            const recordActivity = () => {
+                if (signingOut) return;
+                const now = Date.now();
+                lastActivity = now;
+                if (now - lastStoredActivity >= 10000) {
+                    try { localStorage.setItem(activityKey, String(now)); } catch { /* disabled storage */ }
+                    lastStoredActivity = now;
+                }
+            };
+
+            const signOutDueToInactivity = () => {
+                if (signingOut) return;
+                signingOut = true;
+                // POST carries the antiforgery token and ends the cookie session.
+                logoutForm.requestSubmit();
+            };
+
+            const checkSession = async () => {
+                if (pingInProgress || signingOut) return;
+                pingInProgress = true;
+                try {
+                    const response = await fetch('/auth/keepalive', {
+                        method: 'GET',
+                        credentials: 'same-origin',
+                        cache: 'no-store',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (response.redirected || !response.ok) {
+                        window.location.replace('/Login');
+                    }
+                } catch {
+                    // Offline or network error: do not invent a logout result.
+                    // The server will still check the cookie at the next request.
+                } finally {
+                    pingInProgress = false;
+                }
+            };
+
+            ['pointerdown', 'keydown', 'scroll', 'touchstart', 'mousemove'].forEach(eventName => {
+                document.addEventListener(eventName, recordActivity, { passive: true });
+            });
+
+            recordActivity();
+            window.setInterval(() => {
+                const now = Date.now();
+                const latestActivity = readLastActivity();
+                if (now - latestActivity >= idleLimitMs) {
+                    signOutDueToInactivity();
+                    return;
+                }
+                // Keep an actively used page alive even if no form was submitted.
+                // Passive/idle tabs do not send renewal requests by themselves.
+                if (now - latestActivity <= recentActivityMs &&
+                    now - lastKeepAlive >= keepAliveIntervalMs) {
+                    lastKeepAlive = now;
+                    void checkSession();
+                }
+            }, 15000);
+
+            // Revalidate if the browser restores an older page from back/forward cache.
+            window.addEventListener('pageshow', (event) => {
+                if (event.persisted) {
+                    if (Date.now() - readLastActivity() >= idleLimitMs) {
+                        signOutDueToInactivity();
+                    } else {
+                        void checkSession();
+                    }
+                }
+            });
+        })();
     </script>
 
     <!-- Page-Specific Scripts -->

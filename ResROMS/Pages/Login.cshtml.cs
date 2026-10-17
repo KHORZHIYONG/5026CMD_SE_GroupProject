@@ -32,7 +32,6 @@ public class LoginModel : PageModel
         public string Email { get; set; } = string.Empty;
         [Required, DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
-        public bool RememberMe { get; set; }
     }
 
     public IActionResult OnGet(string? returnUrl = null)
@@ -77,15 +76,19 @@ public class LoginModel : PageModel
             new Claim(ClaimTypes.Name, user.FullName),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role),
-            new Claim("SecurityVersion", user.SecurityVersion.ToString())
+            new Claim("SecurityVersion", user.SecurityVersion.ToString()),
+            new Claim("SessionPolicyVersion", "2")
         };
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(identity),
             new AuthenticationProperties
             {
-                IsPersistent = Input.RememberMe,
-                AllowRefresh = true
+                // Session-only: do not issue a persistent "Remember me" cookie.
+                IsPersistent = false,
+                AllowRefresh = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(
+                    user.Role == "Admin" ? 15 : 30)
             });
 
         if (Url.IsLocalUrl(returnUrl)) return LocalRedirect(returnUrl!);
