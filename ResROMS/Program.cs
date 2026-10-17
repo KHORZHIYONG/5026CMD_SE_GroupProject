@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ResROMS.Data;
+using ResROMS.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,9 +9,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddRazorPages();
-
-// Add services to the container.
-builder.Services.AddRazorPages();
+builder.Services.AddScoped<ITableManagementService, TableManagementService>();
 
 var app = builder.Build();
 // --- SEED DATABASE ---

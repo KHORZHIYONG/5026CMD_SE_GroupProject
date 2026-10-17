@@ -1,4 +1,4 @@
-﻿@page "/Admin/Tables"
+@page "/Admin/Tables"
 @model ResROMS.Pages.Admin.TablesModel
 @{
     ViewData["Title"] = "Floor Layout & Tables";
@@ -145,48 +145,64 @@
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">Dining Areas & Tables</h1>
-        <p class="text-muted small mb-0">Manage dining floor plans, seat capacities, and real-time availability.</p>
+        <h1 class="page-title">Dining Areas &amp; Tables</h1>
+        <p class="text-muted small mb-0">Manage dining floor plans, seat capacities, and availability.</p>
     </div>
     <div class="d-flex gap-2">
-        <button class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#addAreaModal">
+        <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#manageAreasModal">
+            <i class="bi bi-pencil-square me-1"></i> Manage Areas
+        </button>
+        <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#addAreaModal">
             <i class="bi bi-folder-plus me-1"></i> Add Area
         </button>
-        <button class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addTableModal">
+        <button type="button" class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addTableModal"
+                disabled="@(Model.DiningAreas.Count == 0)">
             <i class="bi bi-plus-lg me-1"></i> Add Table
         </button>
     </div>
 </div>
 
-@if (TempData["SuccessMessage"] != null)
+@if (TempData["SuccessMessage"] is string success)
 {
     <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
-        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        @success
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
+@if (TempData["ErrorMessage"] is string error)
+{
+    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+        @error
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger" role="alert" asp-validation-summary="All"></div>
+}
 
-<!-- Area Filters & Legend Row -->
+<div id="pageState" data-active-modal="@Model.ActiveModal" hidden></div>
+
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-    <!-- Area Filter Pills -->
     <div class="d-flex flex-wrap gap-2" id="areaFilterPills">
-        <button class="area-pill active" onclick="filterArea(0, this)">All Areas</button>
+        <button type="button" class="area-pill active" onclick="filterArea(0, this)">All Areas</button>
         @foreach (var area in Model.DiningAreas)
         {
-            <button class="area-pill" onclick="filterArea(@area.Id, this)">@area.Name</button>
+            <button type="button" class="area-pill" onclick="filterArea(@area.Id, this)">@area.Name (@area.TableCount)</button>
         }
     </div>
-
-    <!-- Live Legend -->
-    <div class="d-flex gap-3 bg-white px-3 py-2 rounded-3 shadow-sm text-secondary small font-weight-bold">
-        <span><span class="legend-dot" style="background: #38a169;"></span> Available</span>
-        <span><span class="legend-dot" style="background: #e85d04;"></span> Occupied</span>
-        <span><span class="legend-dot" style="background: #d69e2e;"></span> Reserved</span>
-        <span><span class="legend-dot" style="background: #a0aec0;"></span> Offline</span>
+    <div class="d-flex gap-3 bg-white px-3 py-2 rounded-3 shadow-sm text-secondary small">
+        <span><span class="legend-dot" style="background: #38a169;"></span>Available</span>
+        <span><span class="legend-dot" style="background: #e85d04;"></span>Occupied</span>
+        <span><span class="legend-dot" style="background: #d69e2e;"></span>Reserved</span>
+        <span><span class="legend-dot" style="background: #a0aec0;"></span>Maintenance</span>
     </div>
 </div>
 
-<!-- Tables Layout Grid -->
+@if (Model.Tables.Count == 0)
+{
+    <div class="alert alert-info">No tables are stored yet. Add a dining area, then add your first table.</div>
+}
 <div class="row g-4" id="tablesGrid">
     @foreach (var table in Model.Tables)
     {
@@ -197,7 +213,6 @@
             "Reserved" => "status-reserved",
             _ => "status-maintenance"
         };
-
         var badgeClass = table.Status switch
         {
             "Available" => "badge-available",
@@ -206,29 +221,48 @@
             _ => "badge-maintenance"
         };
 
-        <div class="col-6 col-md-4 col-lg-3 table-item" data-area-id="@table.AreaId">
+        <div class="col-6 col-md-4 col-lg-3 table-item" data-area-id="@table.DiningAreaId">
             <div class="table-card @statusClass">
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="status-badge @badgeClass">@table.Status</span>
                     <div class="dropdown">
-                        <button class="btn btn-sm btn-link text-muted p-0" data-bs-toggle="dropdown">
+                        <button type="button" class="btn btn-sm btn-link text-muted p-0" data-bs-toggle="dropdown" aria-label="Table actions">
                             <i class="bi bi-three-dots-vertical"></i>
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                            <li><a class="dropdown-item small" href="#"><i class="bi bi-pencil me-2"></i>Edit Table</a></li>
-                            <li><a class="dropdown-item small" href="#"><i class="bi bi-arrow-repeat me-2"></i>Change Status</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item small text-danger" href="#"><i class="bi bi-trash me-2"></i>Delete</a></li>
-                        </ul>
+                        <div class="dropdown-menu dropdown-menu-end p-2 shadow-sm" style="min-width: 230px;">
+                            <button type="button" class="dropdown-item small" data-bs-toggle="modal"
+                                    data-bs-target="#editTableModal" data-table-id="@table.Id"
+                                    data-number="@table.TableNumber" data-capacity="@table.Capacity"
+                                    data-area="@table.DiningAreaId" data-shape="@table.Shape">
+                                <i class="bi bi-pencil me-2"></i>Edit Table
+                            </button>
+                            <div class="dropdown-divider"></div>
+                            <form method="post" asp-page-handler="UpdateStatus">
+                                <input type="hidden" name="id" value="@table.Id" />
+                                <label class="small fw-bold" for="status-@table.Id">Change Status</label>
+                                <select class="form-select form-select-sm my-1" id="status-@table.Id" name="newStatus">
+                                    @foreach (var status in new[] { "Available", "Occupied", "Reserved", "Maintenance" })
+                                    {
+                                        <option value="@status" selected="@(status == table.Status)">@status</option>
+                                    }
+                                </select>
+                                <button class="btn btn-sm btn-outline-dark w-100" type="submit">Update Status</button>
+                            </form>
+                            <div class="dropdown-divider"></div>
+                            <form method="post" asp-page-handler="DeleteTable" onsubmit="return confirm('Delete this table?');">
+                                <input type="hidden" name="id" value="@table.Id" />
+                                <button class="dropdown-item small text-danger" type="submit">
+                                    <i class="bi bi-trash me-2"></i>Delete Table
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Graphic Icon representing shape -->
-                <div class="table-visual @(table.Shape.ToLower() == "round" ? "round" : "")">
+                <div class="table-visual @(table.Shape == "Round" ? "round" : "")">
                     <i class="bi bi-grid-fill text-muted mb-1 fs-5"></i>
                     <span class="small">@table.TableNumber</span>
                 </div>
-
                 <div class="text-center">
                     <div class="fw-bold text-dark">@table.TableNumber</div>
                     <div class="text-muted small"><i class="bi bi-person-fill me-1"></i>@table.Capacity Seats</div>
@@ -238,92 +272,133 @@
     }
 </div>
 
-<!-- Modal: Add New Table -->
 <div class="modal fade" id="addTableModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">Add New Table</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow">
+        <div class="modal-header"><h5 class="modal-title fw-bold">Add New Table</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+        <form method="post" asp-page-handler="AddTable">
+            <div class="modal-body">
+                <div class="mb-3"><label asp-for="NewTable.TableNumber" class="form-label fw-bold">Table Number</label>
+                    <input asp-for="NewTable.TableNumber" class="form-control" placeholder="e.g. T-12" required maxlength="20" /></div>
+                <div class="mb-3"><label asp-for="NewTable.Capacity" class="form-label fw-bold">Seating Capacity</label>
+                    <input asp-for="NewTable.Capacity" class="form-control" type="number" min="1" max="20" required /></div>
+                <div class="mb-3"><label asp-for="NewTable.DiningAreaId" class="form-label fw-bold">Dining Area</label>
+                    <select asp-for="NewTable.DiningAreaId" class="form-select" required>
+                        <option value="0">Select a dining area</option>
+                        @foreach (var area in Model.DiningAreas)
+                        {
+                            <option value="@area.Id">@area.Name</option>
+                        }
+                    </select></div>
+                <div class="mb-3"><label asp-for="NewTable.Shape" class="form-label fw-bold">Table Shape</label>
+                    <select asp-for="NewTable.Shape" class="form-select">
+                        <option value="Square">Square</option><option value="Round">Round</option>
+                        <option value="Rectangle">Rectangle</option>
+                    </select></div>
             </div>
-            <form asp-page-handler="AddTable" method="post">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Table Name/Number</label>
-                        <input asp-for="NewTable.TableNumber" class="form-control" placeholder="e.g. T-12" required />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Seating Capacity</label>
-                        <input asp-for="NewTable.Capacity" type="number" min="1" max="20" class="form-control" value="4" required />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Dining Area</label>
-                        <select asp-for="NewTable.AreaId" class="form-select" required>
-                            @foreach (var area in Model.DiningAreas)
-                            {
-                                <option value="@area.Id">@area.Name</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Table Shape</label>
-                        <select asp-for="NewTable.Shape" class="form-select">
-                            <option value="Square">Square</option>
-                            <option value="Round">Round</option>
-                            <option value="Rectangle">Rectangle</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary-custom">Create Table</button>
-                </div>
-            </form>
-        </div>
-    </div>
+            <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary-custom">Create Table</button></div>
+        </form>
+    </div></div>
 </div>
 
-<!-- Modal: Add Dining Area -->
 <div class="modal fade" id="addAreaModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">Add Dining Area</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow">
+        <div class="modal-header"><h5 class="modal-title fw-bold">Add Dining Area</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+        <form method="post" asp-page-handler="AddArea">
+            <div class="modal-body"><label asp-for="NewArea.Name" class="form-label fw-bold">Area Name</label>
+                <input asp-for="NewArea.Name" class="form-control" maxlength="80" placeholder="e.g. Rooftop Terrace" required /></div>
+            <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary-custom">Save Area</button></div>
+        </form>
+    </div></div>
+</div>
+
+<div class="modal fade" id="editTableModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow">
+        <div class="modal-header"><h5 class="modal-title fw-bold">Edit Table</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+        <form method="post" asp-page-handler="EditTable">
+            <input type="hidden" name="id" id="editTableId" />
+            <div class="modal-body">
+                <div class="mb-3"><label class="form-label fw-bold" for="editTableNumber">Table Number</label>
+                    <input class="form-control" type="text" id="editTableNumber" name="EditTable.TableNumber" maxlength="20" required /></div>
+                <div class="mb-3"><label class="form-label fw-bold" for="editTableCapacity">Capacity</label>
+                    <input class="form-control" type="number" id="editTableCapacity" name="EditTable.Capacity" min="1" max="20" required /></div>
+                <div class="mb-3"><label class="form-label fw-bold" for="editTableArea">Dining Area</label>
+                    <select class="form-select" id="editTableArea" name="EditTable.DiningAreaId" required>
+                        @foreach (var area in Model.DiningAreas)
+                        {
+                            <option value="@area.Id">@area.Name</option>
+                        }
+                    </select></div>
+                <div class="mb-3"><label class="form-label fw-bold" for="editTableShape">Shape</label>
+                    <select class="form-select" id="editTableShape" name="EditTable.Shape">
+                        <option value="Square">Square</option><option value="Round">Round</option>
+                        <option value="Rectangle">Rectangle</option>
+                    </select></div>
             </div>
-            <form asp-page-handler="AddArea" method="post">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Area Name</label>
-                        <input asp-for="NewArea.Name" class="form-control" placeholder="e.g. Rooftop Terrace" required />
-                    </div>
+            <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary-custom">Save Changes</button></div>
+        </form>
+    </div></div>
+</div>
+
+<div class="modal fade" id="manageAreasModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content border-0 shadow">
+        <div class="modal-header"><h5 class="modal-title fw-bold">Manage Dining Areas</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+        <div class="modal-body">
+            @foreach (var area in Model.DiningAreas)
+            {
+                <div class="border rounded p-3 mb-2">
+                    <div class="small text-muted mb-2">@area.TableCount table(s)</div>
+                    <form method="post" asp-page-handler="RenameArea" class="d-flex flex-wrap gap-2 mb-2">
+                        <input type="hidden" name="id" value="@area.Id" />
+                        <input type="text" class="form-control flex-grow-1" style="width: 180px;" name="RenameArea.Name"
+                               value="@area.Name" maxlength="80" required aria-label="Rename dining area" />
+                        <button type="submit" class="btn btn-outline-dark">Rename</button>
+                    </form>
+                    <form method="post" asp-page-handler="DeleteArea" onsubmit="return confirm('Delete this empty dining area?');">
+                        <input type="hidden" name="id" value="@area.Id" />
+                        <button type="submit" class="btn btn-sm btn-outline-danger" disabled="@(area.TableCount > 0)">Delete Area</button>
+                    </form>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary-custom">Save Area</button>
-                </div>
-            </form>
+            }
+            @if (Model.DiningAreas.Count == 0)
+            {
+                <p class="text-muted">No dining areas yet.</p>
+            }
+            <p class="small text-muted mb-0">An area must be empty before it can be deleted.</p>
         </div>
-    </div>
+    </div></div>
 </div>
 
 @section Scripts {
     <script>
-        // Simple JS Area Filter Functionality
         function filterArea(areaId, element) {
-            // Update pill styling
-            document.querySelectorAll('#areaFilterPills .area-pill').forEach(pill => pill.classList.remove('active'));
+            document.querySelectorAll('#areaFilterPills .area-pill')
+                .forEach(pill => pill.classList.remove('active'));
             element.classList.add('active');
-
-            // Filter grid items
-            const cards = document.querySelectorAll('#tablesGrid .table-item');
-            cards.forEach(card => {
-                if (areaId === 0 || card.getAttribute('data-area-id') == areaId) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
+            document.querySelectorAll('#tablesGrid .table-item').forEach(card => {
+                card.style.display = areaId === 0 || card.dataset.areaId === String(areaId) ? '' : 'none';
             });
+        }
+
+        document.getElementById('editTableModal').addEventListener('show.bs.modal', event => {
+            const trigger = event.relatedTarget;
+            if (!trigger) return;
+            document.getElementById('editTableId').value = trigger.dataset.tableId;
+            document.getElementById('editTableNumber').value = trigger.dataset.number;
+            document.getElementById('editTableCapacity').value = trigger.dataset.capacity;
+            document.getElementById('editTableArea').value = trigger.dataset.area;
+            document.getElementById('editTableShape').value = trigger.dataset.shape;
+        });
+
+        const activeModalId = document.getElementById('pageState')?.dataset.activeModal;
+        if (activeModalId) {
+            bootstrap.Modal.getOrCreateInstance(document.getElementById(activeModalId)).show();
         }
     </script>
 }

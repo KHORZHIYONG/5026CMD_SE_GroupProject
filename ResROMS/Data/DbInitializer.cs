@@ -1,4 +1,4 @@
-﻿using ResROMS.Models;
+using ResROMS.Models;
 
 namespace ResROMS.Data
 {
@@ -6,8 +6,8 @@ namespace ResROMS.Data
     {
         public static void Initialize(AppDbContext context)
         {
-            // Ensure the database is created
-            context.Database.EnsureCreated();
+            // Manage schema changes using EF Core migrations (Update-Database).
+            // Do not call EnsureCreated() on a migrations-managed database.
 
             // Check if any Menu Items already exist. If yes, stop running the seeder.
             if (context.MenuItems.Any())

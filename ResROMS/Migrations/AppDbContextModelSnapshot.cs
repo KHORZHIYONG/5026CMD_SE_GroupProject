@@ -49,9 +49,13 @@ namespace ResROMS.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.ToTable("DiningAreas");
                 });
@@ -109,17 +113,29 @@ namespace ResROMS.Migrations
                     b.Property<int>("DiningAreaId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Shape")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Square");
+
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("TableNumber")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("DiningAreaId");
+
+                    b.HasIndex("TableNumber")
+                        .IsUnique();
 
                     b.ToTable("Tables");
                 });
@@ -175,7 +191,7 @@ namespace ResROMS.Migrations
                     b.HasOne("ResROMS.Models.DiningArea", "DiningArea")
                         .WithMany("Tables")
                         .HasForeignKey("DiningAreaId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("DiningArea");

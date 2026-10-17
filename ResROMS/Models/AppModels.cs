@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace ResROMS.Models
 {
@@ -39,16 +39,17 @@ namespace ResROMS.Models
     public class DiningArea
     {
         public int Id { get; set; }
-        [Required] public string Name { get; set; } = string.Empty;
+        [Required, StringLength(80)] public string Name { get; set; } = string.Empty;
         public List<Table> Tables { get; set; } = new();
     }
 
     public class Table
     {
         public int Id { get; set; }
-        [Required] public string TableNumber { get; set; } = string.Empty;
+        [Required, StringLength(20)] public string TableNumber { get; set; } = string.Empty;
         public int Capacity { get; set; }
-        public string Status { get; set; } = "Available";
+        [StringLength(20)] public string Status { get; set; } = "Available";
+        [StringLength(20)] public string Shape { get; set; } = "Square";
 
         // Foreign Key
         public int DiningAreaId { get; set; }
