@@ -1,15 +1,16 @@
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-// using Microsoft.AspNetCore.Authorization; 
+using ResROMS.Services;
 
-namespace ResROMS.Pages.Admin
+namespace ResROMS.Pages.Admin;
+
+[Authorize(Policy = "AdminOnly")]
+public sealed class DashboardModel : PageModel
 {
-    // [Authorize(Roles = "Administrator")] // You will uncomment this later when authentication is fully set up!
-    public class DashboardModel : PageModel
-    {
-        public void OnGet()
-        {
-            // Future logic: Fetch daily stats (e.g., today's revenue, active reservations) to display on the dashboard
-        }
-    }
+    private readonly IAdminReportingService _reporting;
+    public DashboardModel(IAdminReportingService reporting) => _reporting = reporting;
+    public AdminDashboard Data { get; private set; } = default!;
+
+    public async Task OnGetAsync(CancellationToken cancellationToken) =>
+        Data = await _reporting.GetDashboardAsync(cancellationToken);
 }
