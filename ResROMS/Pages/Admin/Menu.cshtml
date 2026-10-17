@@ -117,6 +117,9 @@
         <p class="text-muted small mb-0">Create dishes, adjust prices, and toggle real-time kitchen availability.</p>
     </div>
     <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#manageCategoriesModal">
+            <i class="bi bi-pencil-square me-1"></i> Manage Categories
+        </button>
         <button class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
             <i class="bi bi-folder-plus me-1"></i> Add Category
         </button>
@@ -179,7 +182,7 @@
                 <div class="p-4 d-flex flex-column flex-grow-1">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <h5 class="fw-bold text-dark mb-0">@item.Name</h5>
-                        <span class="item-price">$@item.Price.ToString("F2")</span>
+                        <span class="item-price">RM @item.Price.ToString("F2")</span>
                     </div>
 
                     <p class="text-muted small mb-3 flex-grow-1">@item.Description</p>
@@ -241,18 +244,20 @@
             </div>
             <form asp-page-handler="AddMenuItem" method="post">
                 <div class="modal-body">
+                    <div asp-validation-summary="All" class="text-danger small mb-2"></div>
                     <div class="row g-3">
                         <div class="col-md-8">
                             <label class="form-label fw-bold">Dish Name</label>
-                            <input asp-for="NewMenuItem.Name" class="form-control" placeholder="e.g. Wagyu Beef Burger" required />
+                            <input asp-for="NewMenuItem.Name" maxlength="120" class="form-control" placeholder="e.g. Wagyu Beef Burger" required />
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-bold">Price ($)</label>
-                            <input asp-for="NewMenuItem.Price" type="number" step="0.01" class="form-control" placeholder="18.50" required />
+                            <label class="form-label fw-bold">Price (RM)</label>
+                            <input asp-for="NewMenuItem.Price" type="number" min="0.01" max="99999.99" step="0.01" class="form-control" placeholder="18.50" required />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Category</label>
                             <select asp-for="NewMenuItem.CategoryId" class="form-select" required>
+                                <option value="">Choose a category</option>
                                 @foreach (var cat in Model.Categories)
                                 {
                                     <option value="@cat.Id">@cat.Name</option>
@@ -271,11 +276,11 @@
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-bold">Image URL</label>
-                            <input asp-for="NewMenuItem.ImageUrl" class="form-control" placeholder="https://images.unsplash.com/..." />
+                            <input asp-for="NewMenuItem.ImageUrl" maxlength="2048" class="form-control" placeholder="https://images.unsplash.com/..." />
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-bold">Description</label>
-                            <textarea asp-for="NewMenuItem.Description" class="form-control" rows="3" placeholder="Briefly describe the ingredients and preparation..."></textarea>
+                            <textarea asp-for="NewMenuItem.Description" maxlength="2000" class="form-control" rows="3" placeholder="Briefly describe the ingredients and preparation..."></textarea>
                         </div>
                     </div>
                 </div>
@@ -301,18 +306,20 @@
                 <input type="hidden" asp-for="EditMenuItem.Id" id="editItemId" />
 
                 <div class="modal-body">
+                    <div asp-validation-summary="All" class="text-danger small mb-2"></div>
                     <div class="row g-3">
                         <div class="col-md-8">
                             <label class="form-label fw-bold">Dish Name</label>
-                            <input asp-for="EditMenuItem.Name" id="editItemName" class="form-control" required />
+                            <input asp-for="EditMenuItem.Name" maxlength="120" id="editItemName" class="form-control" required />
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-bold">Price ($)</label>
-                            <input asp-for="EditMenuItem.Price" id="editItemPrice" type="number" step="0.01" class="form-control" required />
+                            <label class="form-label fw-bold">Price (RM)</label>
+                            <input asp-for="EditMenuItem.Price" id="editItemPrice" type="number" min="0.01" max="99999.99" step="0.01" class="form-control" required />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Category</label>
                             <select asp-for="EditMenuItem.CategoryId" id="editItemCategory" class="form-select" required>
+                                <option value="">Choose a category</option>
                                 @foreach (var cat in Model.Categories)
                                 {
                                     <option value="@cat.Id">@cat.Name</option>
@@ -331,11 +338,11 @@
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-bold">Image URL</label>
-                            <input asp-for="EditMenuItem.ImageUrl" id="editItemImage" class="form-control" />
+                            <input asp-for="EditMenuItem.ImageUrl" maxlength="2048" id="editItemImage" class="form-control" />
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-bold">Description</label>
-                            <textarea asp-for="EditMenuItem.Description" id="editItemDescription" class="form-control" rows="3"></textarea>
+                            <textarea asp-for="EditMenuItem.Description" maxlength="2000" id="editItemDescription" class="form-control" rows="3"></textarea>
                         </div>
                     </div>
                 </div>
@@ -358,9 +365,10 @@
             </div>
             <form asp-page-handler="AddCategory" method="post">
                 <div class="modal-body">
+                    <div asp-validation-summary="All" class="text-danger small mb-2"></div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Category Name</label>
-                        <input asp-for="NewCategory.Name" class="form-control" placeholder="e.g. Cocktails & Drinks" required />
+                        <input asp-for="NewCategory.Name" maxlength="80" class="form-control" placeholder="e.g. Cocktails & Drinks" required />
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -372,7 +380,56 @@
     </div>
 </div>
 
+
+<!-- Modal: Manage Categories. A category with dishes cannot be deleted. -->
+<div class="modal fade" id="manageCategoriesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Manage Menu Categories</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small">Rename categories or delete empty categories. Move dishes to another category before deletion.</p>
+                @if (!Model.Categories.Any())
+                {
+                    <p class="text-muted">No categories yet.</p>
+                }
+                @foreach (var cat in Model.Categories)
+                {
+                    <div class="row g-2 align-items-center mb-3">
+                        <div class="col-12 col-md-9">
+                            <form id="rename-category-@cat.Id" asp-page-handler="RenameCategory" asp-route-id="@cat.Id" method="post" class="d-flex gap-2">
+                                <input type="text" name="RenameCategory.Name" value="@cat.Name" maxlength="80" required class="form-control" aria-label="New name for @cat.Name" />
+                                <button type="submit" class="btn btn-outline-primary text-nowrap">Rename</button>
+                            </form>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <form asp-page-handler="DeleteCategory" asp-route-id="@cat.Id" method="post">
+                                <button type="submit" class="btn btn-outline-danger w-100"
+                                        onclick="return confirm('Delete this category? Dishes must be reassigned first.');">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
+    @if (!string.IsNullOrEmpty(Model.ActiveModal))
+    {
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const modal = document.getElementById('@Model.ActiveModal');
+                if (modal) bootstrap.Modal.getOrCreateInstance(modal).show();
+            });
+        </script>
+    }
     <script>
         // Category Filter Function
         function filterCategory(categoryId, element) {

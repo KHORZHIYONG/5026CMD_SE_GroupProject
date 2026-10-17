@@ -1,111 +1,123 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using ResROMS.Data;
 using ResROMS.Models;
+using ResROMS.Services;
 
-namespace ResROMS.Pages.Admin
+namespace ResROMS.Pages.Admin;
+
+public class MenuModel : PageModel
 {
-    public class MenuModel : PageModel
+    private readonly IMenuManagementService _menu;
+    public MenuModel(IMenuManagementService menu) => _menu = menu;
+
+    public class MenuItemForm
     {
-        private readonly AppDbContext _context;
+        public int Id { get; set; }
 
-        public MenuModel(AppDbContext context)
-        {
-            _context = context;
-        }
+        [Required, StringLength(120, MinimumLength = 1)]
+        public string Name { get; set; } = string.Empty;
 
-        // Using real database models now instead of DTOs
-        public IList<Category> Categories { get; set; } = default!;
-        public IList<MenuItem> MenuItems { get; set; } = default!;
+        [Range(typeof(decimal), "0.01", "99999.99", ErrorMessage = "Enter a price from RM 0.01 to RM 99,999.99.")]
+        public decimal Price { get; set; }
 
-        [BindProperty]
-        public MenuItem NewMenuItem { get; set; } = default!;
+        [Range(1, int.MaxValue, ErrorMessage = "Choose a category.")]
+        public int CategoryId { get; set; }
 
-        [BindProperty]
-        public Category NewCategory { get; set; } = default!;
+        public string? DietaryTag { get; set; }
+        [StringLength(2048)] public string? ImageUrl { get; set; }
+        [StringLength(2000)] public string? Description { get; set; }
 
-        // --- ADD THESE FOR EDITING ---
-        [BindProperty]
-        public MenuItem EditMenuItem { get; set; } = default!;
-
-
-        // --- DELETE METHOD ---
-        public async Task<IActionResult> OnPostDeleteMenuItemAsync(int id)
-        {
-            var item = await _context.MenuItems.FindAsync(id);
-            if (item != null)
-            {
-                if (await _context.OrderItems.AnyAsync(oi => oi.MenuItemId == id))
-                {
-                    TempData["ErrorMessage"] = "This dish appears in order history. Mark it unavailable instead of deleting it.";
-                    return RedirectToPage();
-                }
-                _context.MenuItems.Remove(item);
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = $"Dish '{item.Name}' removed from the menu.";
-            }
-            return RedirectToPage();
-        }
-
-        // --- EDIT METHOD ---
-        public async Task<IActionResult> OnPostEditMenuItemAsync()
-        {
-            var itemInDb = await _context.MenuItems.FindAsync(EditMenuItem.Id);
-            if (itemInDb != null)
-            {
-                // Update the existing item with the new values
-                itemInDb.Name = EditMenuItem.Name;
-                itemInDb.Price = EditMenuItem.Price;
-                itemInDb.CategoryId = EditMenuItem.CategoryId;
-                itemInDb.DietaryTag = EditMenuItem.DietaryTag;
-                itemInDb.ImageUrl = EditMenuItem.ImageUrl;
-                itemInDb.Description = EditMenuItem.Description;
-
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = $"Dish '{itemInDb.Name}' updated successfully!";
-            }
-            return RedirectToPage();
-        }
-
-        public async Task OnGetAsync()
-        {
-            // Fetch live data from LocalDB
-            Categories = await _context.Categories.ToListAsync();
-            MenuItems = await _context.MenuItems.Include(m => m.Category).ToListAsync();
-        }
-
-        public async Task<IActionResult> OnPostAddMenuItemAsync()
-        {
-            _context.MenuItems.Add(NewMenuItem);
-            await _context.SaveChangesAsync(); // Saves permanently to LocalDB
-
-            TempData["SuccessMessage"] = $"Dish '{NewMenuItem.Name}' added to menu!";
-            return RedirectToPage();
-        }
-
-        public async Task<IActionResult> OnPostAddCategoryAsync()
-        {
-            _context.Categories.Add(NewCategory);
-            await _context.SaveChangesAsync(); // Saves permanently to LocalDB
-
-            TempData["SuccessMessage"] = $"Category '{NewCategory.Name}' created!";
-            return RedirectToPage();
-        }
-
-        // --- THIS RUNS WHEN YOU TOGGLE THE SWITCH ---
-        public async Task<IActionResult> OnPostToggleAvailabilityAsync(int id, bool isAvailable)
-        {
-            var item = await _context.MenuItems.FindAsync(id);
-            if (item == null)
-            {
-                return NotFound();
-            }
-
-            item.IsAvailable = isAvailable;
-            await _context.SaveChangesAsync();
-
-            return new JsonResult(new { success = true });
-        }
+        public MenuItemChange ToChange() =>
+            new(Name, Price, CategoryId, DietaryTag, ImageUrl, Description);
     }
+
+    public class CategoryForm
+    {
+        [Required, StringLength(80, MinimumLength = 1)]
+        public string Name { get; set; } = string.Empty;
+    }
+
+    // For asp-for tag helpers. Actual binding happens per handler, so posting
+    // one modal does not validate unrelated modal forms.
+    public MenuItemForm NewMenuItem { get; private set; } = new();
+    public MenuItemForm EditMenuItem { get; private set; } = new();
+    public CategoryForm NewCategory { get; private set; } = new();
+
+    public IReadOnlyList<Category> Categories { get; private set; } = [];
+    public IReadOnlyList<MenuItem> MenuItems { get; private set; } = [];
+    public string? ActiveModal { get; private set; }
+
+    public async Task OnGetAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var catalog = await _menu.GetCatalogAsync();
+        Categories = catalog.Categories;
+        MenuItems = catalog.MenuItems;
+    }
+
+    private IActionResult Result(OperationResult result)
+    {
+        TempData[result.Success ? "SuccessMessage" : "ErrorMessage"] = result.Message;
+        return RedirectToPage();
+    }
+
+    private async Task<IActionResult> InvalidAsync(string modal)
+    {
+        ActiveModal = modal;
+        await LoadAsync();
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostAddMenuItemAsync(
+        [Bind(Prefix = "NewMenuItem")] MenuItemForm input)
+    {
+        NewMenuItem = input;
+        if (!ModelState.IsValid) return await InvalidAsync("addItemModal");
+        return Result(await _menu.AddMenuItemAsync(input.ToChange()));
+    }
+
+    public async Task<IActionResult> OnPostEditMenuItemAsync(
+        [Bind(Prefix = "EditMenuItem")] MenuItemForm input)
+    {
+        EditMenuItem = input;
+        if (input.Id <= 0)
+            ModelState.AddModelError("EditMenuItem.Id", "Invalid menu item.");
+        if (!ModelState.IsValid) return await InvalidAsync("editItemModal");
+        return Result(await _menu.EditMenuItemAsync(input.Id, input.ToChange()));
+    }
+
+    public async Task<IActionResult> OnPostDeleteMenuItemAsync(int id) =>
+        Result(await _menu.DeleteMenuItemAsync(id));
+
+    public async Task<IActionResult> OnPostToggleAvailabilityAsync(int id, bool isAvailable)
+    {
+        var result = await _menu.SetAvailabilityAsync(id, isAvailable);
+        return result.Success
+            ? new JsonResult(new { success = true })
+            : new BadRequestObjectResult(new { success = false, error = result.Message });
+    }
+
+    public async Task<IActionResult> OnPostAddCategoryAsync(
+        [Bind(Prefix = "NewCategory")] CategoryForm input)
+    {
+        NewCategory = input;
+        if (!ModelState.IsValid) return await InvalidAsync("addCategoryModal");
+        return Result(await _menu.AddCategoryAsync(input.Name));
+    }
+
+    public async Task<IActionResult> OnPostRenameCategoryAsync(int id,
+        [Bind(Prefix = "RenameCategory")] CategoryForm input)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData["ErrorMessage"] = "Category name is required and must be at most 80 characters.";
+            return RedirectToPage();
+        }
+        return Result(await _menu.RenameCategoryAsync(id, input.Name));
+    }
+
+    public async Task<IActionResult> OnPostDeleteCategoryAsync(int id) =>
+        Result(await _menu.DeleteCategoryAsync(id));
 }
