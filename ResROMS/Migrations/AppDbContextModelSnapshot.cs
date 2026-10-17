@@ -153,7 +153,8 @@ namespace ResROMS.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)");
 
                     b.Property<string>("FullName")
                         .IsRequired()
@@ -161,6 +162,12 @@ namespace ResROMS.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")
                         .IsRequired()
@@ -170,7 +177,13 @@ namespace ResROMS.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("SecurityVersion")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
 
                     b.ToTable("Users");
                 });

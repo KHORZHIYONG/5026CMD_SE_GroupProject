@@ -11,6 +11,11 @@ namespace ResROMS.Models
         public string Role { get; set; } = "Staff";
         public bool IsActive { get; set; } = true;
         public DateTime DateJoined { get; set; } = DateTime.UtcNow;
+        // Null for existing demo users until an Administrator assigns a password.
+        public string? PasswordHash { get; set; }
+        public DateTime? LastLoginAt { get; set; }
+        // Incremented to revoke existing authentication cookies after security changes.
+        public int SecurityVersion { get; set; }
     }
 
     public class Category

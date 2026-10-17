@@ -1,98 +1,95 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using ResROMS.Services;
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 
-namespace ResROMS.Pages.Admin
+namespace ResROMS.Pages.Admin;
+
+public class AccountsModel : PageModel
 {
-    public class AccountsModel : PageModel
+    private readonly IAccountManagementService _accounts;
+    public AccountsModel(IAccountManagementService accounts) => _accounts = accounts;
+
+    public IReadOnlyList<AccountSummary> Users { get; private set; } = [];
+    public CreateUserInput NewUser { get; set; } = new();
+    public string? ActiveModal { get; private set; }
+
+    public class CreateUserInput
     {
-        public class UserDto
+        [Required, StringLength(120)]
+        public string FullName { get; set; } = string.Empty;
+        [Required, EmailAddress, StringLength(254)]
+        public string Email { get; set; } = string.Empty;
+        [StringLength(30)]
+        public string Phone { get; set; } = string.Empty;
+        [Required, RegularExpression("Admin|Kitchen Staff|Waiter|Customer")]
+        public string Role { get; set; } = "Waiter";
+        [Required, MinLength(12), MaxLength(256), DataType(DataType.Password)]
+        public string TemporaryPassword { get; set; } = string.Empty;
+    }
+
+    public class EditUserInput
+    {
+        [Required, StringLength(120)]
+        public string FullName { get; set; } = string.Empty;
+        [Required, EmailAddress, StringLength(254)]
+        public string Email { get; set; } = string.Empty;
+        [StringLength(30)]
+        public string Phone { get; set; } = string.Empty;
+        [Required, RegularExpression("Admin|Kitchen Staff|Waiter|Customer")]
+        public string Role { get; set; } = "Waiter";
+    }
+
+    public class ResetPasswordInput
+    {
+        [Required, MinLength(12), MaxLength(256), DataType(DataType.Password)]
+        public string NewPassword { get; set; } = string.Empty;
+    }
+
+    public async Task OnGetAsync() => Users = await _accounts.GetUsersAsync();
+
+    private int ActorId => int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
+    private IActionResult Finish(AccountActionResult result)
+    {
+        TempData[result.Success ? "SuccessMessage" : "ErrorMessage"] = result.Message;
+        return RedirectToPage();
+    }
+
+    private IActionResult InvalidForm()
+    {
+        TempData["ErrorMessage"] = "Please check the required fields and try again.";
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostAddUserAsync([Bind(Prefix = "NewUser")] CreateUserInput input)
+    {
+        if (!ModelState.IsValid)
         {
-            public int Id { get; set; }
-            public string FullName { get; set; } = string.Empty;
-            public string Email { get; set; } = string.Empty;
-            public string Phone { get; set; } = string.Empty;
-            public string Role { get; set; } = "Staff"; // Admin, Kitchen Staff, Waiter, Customer
-            public bool IsActive { get; set; } = true;
-            public DateTime DateJoined { get; set; }
-            public string LastLogin { get; set; } = string.Empty;
+            NewUser = input;
+            ActiveModal = "addUserModal";
+            Users = await _accounts.GetUsersAsync();
+            return Page();
         }
+        return Finish(await _accounts.CreateAsync(new AccountCreation(
+            input.FullName, input.Email, input.Phone, input.Role, input.TemporaryPassword)));
+    }
 
-        public class CreateUserDto
-        {
-            public string FullName { get; set; } = string.Empty;
-            public string Email { get; set; } = string.Empty;
-            public string Phone { get; set; } = string.Empty;
-            public string Role { get; set; } = "Waiter";
-            public string TemporaryPassword { get; set; } = string.Empty;
-        }
+    public async Task<IActionResult> OnPostEditUserAsync(int id, [Bind(Prefix = "EditUser")] EditUserInput input)
+    {
+        if (!ModelState.IsValid) return InvalidForm();
+        return Finish(await _accounts.UpdateAsync(id, ActorId,
+            new AccountUpdate(input.FullName, input.Email, input.Phone, input.Role)));
+    }
 
-        public List<UserDto> Users { get; set; } = new();
+    public async Task<IActionResult> OnPostSetActiveAsync(int id, bool isActive) =>
+        Finish(await _accounts.SetActiveAsync(id, ActorId, isActive));
 
-        [BindProperty]
-        public CreateUserDto NewUser { get; set; } = new();
-
-        public void OnGet()
-        {
-            // Sample User Data
-            Users = new List<UserDto>
-            {
-                new UserDto {
-                    Id = 1,
-                    FullName = "Sarah Jenkins",
-                    Email = "sarah.admin@resroms.com",
-                    Phone = "+1 555-0142",
-                    Role = "Admin",
-                    IsActive = true,
-                    DateJoined = new DateTime(2025, 1, 15),
-                    LastLogin = "Today, 08:30 AM"
-                },
-                new UserDto {
-                    Id = 2,
-                    FullName = "Marco Rossi",
-                    Email = "chef.marco@resroms.com",
-                    Phone = "+1 555-0188",
-                    Role = "Kitchen Staff",
-                    IsActive = true,
-                    DateJoined = new DateTime(2025, 3, 10),
-                    LastLogin = "Today, 10:15 AM"
-                },
-                new UserDto {
-                    Id = 3,
-                    FullName = "Alex Rivera",
-                    Email = "alex.r@resroms.com",
-                    Phone = "+1 555-0199",
-                    Role = "Waiter",
-                    IsActive = true,
-                    DateJoined = new DateTime(2025, 6, 01),
-                    LastLogin = "Yesterday, 09:45 PM"
-                },
-                new UserDto {
-                    Id = 4,
-                    FullName = "Emily Chen",
-                    Email = "emily.waiter@resroms.com",
-                    Phone = "+1 555-0211",
-                    Role = "Waiter",
-                    IsActive = false,
-                    DateJoined = new DateTime(2025, 7, 20),
-                    LastLogin = "3 weeks ago"
-                },
-                new UserDto {
-                    Id = 5,
-                    FullName = "David Miller",
-                    Email = "dmiller@gmail.com",
-                    Phone = "+1 555-0344",
-                    Role = "Customer",
-                    IsActive = true,
-                    DateJoined = new DateTime(2026, 2, 12),
-                    LastLogin = "Today, 01:10 PM"
-                }
-            };
-        }
-
-        public IActionResult OnPostAddUser()
-        {
-            TempData["SuccessMessage"] = $"Account for '{NewUser.FullName}' ({NewUser.Role}) created successfully!";
-            return RedirectToPage();
-        }
+    public async Task<IActionResult> OnPostResetPasswordAsync(int id,
+        [Bind(Prefix = "ResetUser")] ResetPasswordInput input)
+    {
+        if (!ModelState.IsValid) return InvalidForm();
+        return Finish(await _accounts.ResetPasswordAsync(id, input.NewPassword));
     }
 }

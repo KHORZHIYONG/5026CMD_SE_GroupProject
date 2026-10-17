@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -7,86 +8,92 @@ using ResROMS.Data;
 using ResROMS.Models;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
-// using ResROMS.Data; // Ensure your Data namespace is included here!
 
-namespace ResROMS.Pages
+namespace ResROMS.Pages;
+
+public class LoginModel : PageModel
 {
-    public class LoginModel : PageModel
+    private readonly AppDbContext _db;
+    private readonly IPasswordHasher<User> _hasher;
+
+    public LoginModel(AppDbContext db, IPasswordHasher<User> hasher)
     {
-        private readonly AppDbContext _context;
+        _db = db;
+        _hasher = hasher;
+    }
 
-        public LoginModel(AppDbContext context)
+    [BindProperty]
+    public LoginInput Input { get; set; } = new();
+    public string? ReturnUrl { get; set; }
+
+    public class LoginInput
+    {
+        [Required, EmailAddress]
+        public string Email { get; set; } = string.Empty;
+        [Required, DataType(DataType.Password)]
+        public string Password { get; set; } = string.Empty;
+        public bool RememberMe { get; set; }
+    }
+
+    public IActionResult OnGet(string? returnUrl = null)
+    {
+        ReturnUrl = returnUrl;
+        if (User.Identity?.IsAuthenticated == true)
         {
-            _context = context;
+            if (User.IsInRole("Admin")) return RedirectToPage("/Admin/Dashboard");
+            if (User.IsInRole("Customer")) return RedirectToPage("/Customer/Reservations");
         }
+        return Page();
+    }
 
-        [BindProperty]
-        public InputModel Input { get; set; } = default!;
+    public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
+    {
+        ReturnUrl = returnUrl;
+        if (!ModelState.IsValid) return Page();
 
-        public string? ReturnUrl { get; set; }
-
-        public class InputModel
+        var email = Input.Email.Trim().ToLowerInvariant();
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email);
+        if (user == null || !user.IsActive || string.IsNullOrEmpty(user.PasswordHash))
         {
-            [Required(ErrorMessage = "Email is required.")]
-            [EmailAddress(ErrorMessage = "Invalid email format.")]
-            public string Email { get; set; } = string.Empty;
-
-            [Required(ErrorMessage = "Password is required.")]
-            [DataType(DataType.Password)]
-            public string Password { get; set; } = string.Empty;
-
-            [Display(Name = "Remember me?")]
-            public bool RememberMe { get; set; }
-        }
-
-        public void OnGet(string? returnUrl = null)
-        {
-            ReturnUrl = returnUrl;
-        }
-
-        public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
-        {
-            returnUrl ??= Url.Content("~/Admin/Menu"); // Default redirect after login
-
-            if (ModelState.IsValid)
-            {
-                // 1. Check if the user exists in the database and is active
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == Input.Email);
-
-                // Note: In a real production app, NEVER store plain text passwords. 
-                // You would use BCrypt or ASP.NET Identity to hash and verify here.
-                // For this project phase, we are checking a placeholder password "admin123" for testing.
-                if (user != null && user.IsActive && Input.Password == "admin123")
-                {
-                    // 2. Create the security payload (Claims)
-                    var claims = new List<Claim>
-                    {
-                        new Claim(ClaimTypes.Name, user.FullName),
-                        new Claim(ClaimTypes.Email, user.Email),
-                        new Claim(ClaimTypes.Role, user.Role),
-                        new Claim("UserId", user.Id.ToString())
-                    };
-
-                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-                    var authProperties = new AuthenticationProperties
-                    {
-                        IsPersistent = Input.RememberMe
-                    };
-
-                    // 3. Issue the encrypted cookie to the user's browser
-                    await HttpContext.SignInAsync(
-                        CookieAuthenticationDefaults.AuthenticationScheme,
-                        new ClaimsPrincipal(claimsIdentity),
-                        authProperties);
-
-                    return LocalRedirect(returnUrl);
-                }
-
-                ModelState.AddModelError(string.Empty, "Invalid login attempt or account disabled.");
-            }
-
+            ModelState.AddModelError(string.Empty, "Invalid email or password, or the account is disabled.");
             return Page();
         }
+
+        var verification = _hasher.VerifyHashedPassword(user, user.PasswordHash, Input.Password);
+        if (verification == PasswordVerificationResult.Failed)
+        {
+            ModelState.AddModelError(string.Empty, "Invalid email or password, or the account is disabled.");
+            return Page();
+        }
+
+        if (verification == PasswordVerificationResult.SuccessRehashNeeded)
+            user.PasswordHash = _hasher.HashPassword(user, Input.Password);
+        user.LastLoginAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.FullName),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.Role),
+            new Claim("SecurityVersion", user.SecurityVersion.ToString())
+        };
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(identity),
+            new AuthenticationProperties
+            {
+                IsPersistent = Input.RememberMe,
+                AllowRefresh = true
+            });
+
+        if (Url.IsLocalUrl(returnUrl)) return LocalRedirect(returnUrl!);
+        return user.Role switch
+        {
+            "Admin" => RedirectToPage("/Admin/Dashboard"),
+            "Customer" => RedirectToPage("/Customer/Reservations"),
+            _ => RedirectToPage("/AccessDenied")
+        };
     }
 }

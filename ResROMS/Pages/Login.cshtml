@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model ResROMS.Pages.LoginModel
 @{
     ViewData["Title"] = "Sign In";
@@ -202,7 +202,7 @@
     </div>
 
     <div class="login-card">
-        <form method="post">
+        <form method="post" asp-route-returnUrl="@Model.ReturnUrl">
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3 text-center small fw-bold"></div>
 
             <div class="mb-4">
@@ -223,13 +223,16 @@
                 <span asp-validation-for="Input.Password" class="text-warning small mt-1 d-block"></span>
             </div>
 
-            <input type="hidden" asp-for="Input.RememberMe" value="true" />
+            <div class="form-check text-light small mt-3">
+                <input asp-for="Input.RememberMe" class="form-check-input" />
+                <label asp-for="Input.RememberMe" class="form-check-label">Remember me</label>
+            </div>
 
             <button type="submit" class="btn btn-login">Access Dashboard</button>
 
             <div class="card-links">
                 <a href="#">Contact Support</a>
-                <a href="#">Forgot password?</a>
+                <span class="text-light">Need a password reset? Contact an administrator.</span>
             </div>
         </form>
     </div>

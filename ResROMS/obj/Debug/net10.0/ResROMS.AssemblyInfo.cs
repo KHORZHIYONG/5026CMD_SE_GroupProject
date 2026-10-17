@@ -11,10 +11,11 @@
 using System;
 using System.Reflection;
 
+[assembly: Microsoft.Extensions.Configuration.UserSecrets.UserSecretsIdAttribute("1cf59910-8f0d-4b52-aca5-19da09cb3e0b")]
 [assembly: System.Reflection.AssemblyCompanyAttribute("ResROMS")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+26796cb38c6356615e98f83456d638453e2f2304")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+26a09448e45092e99b712aa06a9dfeab049fbb1d")]
 [assembly: System.Reflection.AssemblyProductAttribute("ResROMS")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ResROMS")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -84,6 +84,12 @@ public sealed class TableManagementService : ITableManagementService
         var problem = await ValidateTableAsync(tableNumber, capacity, diningAreaId, shape, id);
         if (problem is not null) return Error(problem);
 
+        // Do not reduce seats below the party size of an upcoming booking.
+        if (await _db.Reservations.AnyAsync(r => r.TableId == id &&
+            r.EndUtc > DateTime.UtcNow && (r.Status == "Pending" || r.Status == "Confirmed")
+            && r.PartySize > capacity))
+            return Error("A future reservation requires more seats than the new capacity.");
+
         table.TableNumber = tableNumber;
         table.Capacity = capacity;
         table.DiningAreaId = diningAreaId;
@@ -97,6 +103,10 @@ public sealed class TableManagementService : ITableManagementService
             return Error("Invalid table status.");
         var table = await _db.Tables.FindAsync(id);
         if (table is null) return Error("Table not found.");
+        if (status == "Maintenance" && await _db.Reservations.AnyAsync(r =>
+            r.TableId == id && r.EndUtc > DateTime.UtcNow &&
+            (r.Status == "Pending" || r.Status == "Confirmed")))
+            return Error("Cancel or reassign upcoming reservations before setting Maintenance.");
         table.Status = status;
         return await SaveAsync($"Table '{table.TableNumber}' is now {status}.");
     }
@@ -105,6 +115,9 @@ public sealed class TableManagementService : ITableManagementService
     {
         var table = await _db.Tables.FindAsync(id);
         if (table is null) return Error("Table not found.");
+        // Preserve past reservation history rather than silently deleting it.
+        if (await _db.Reservations.AnyAsync(r => r.TableId == id))
+            return Error("This table has reservation history and cannot be deleted. Mark it Maintenance instead.");
         _db.Tables.Remove(table);
         return await SaveAsync($"Table '{table.TableNumber}' deleted.");
     }

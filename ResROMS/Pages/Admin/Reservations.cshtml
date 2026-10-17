@@ -1,0 +1,224 @@
+@page "/Admin/Reservations"
+@using ResROMS.Services
+@model ResROMS.Pages.Admin.ReservationsModel
+@{
+    ViewData["Title"] = "Reservations";
+}
+@section Styles {
+    <style>
+        .res-header {display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem}
+        .res-title {font-weight:700;color:#252b34;margin:0}
+        .res-card {border:0;border-radius:16px;background:#fff;box-shadow:0 6px 22px rgba(0,0,0,.045);padding:1.5rem}
+        .res-primary {background:#e85d04;color:#fff;border:0}.res-primary:hover {background:#c74c00;color:#fff}
+        .res-badge {font-size:.75rem;font-weight:700;border-radius:20px;padding:.35rem .65rem}
+        .res-Pending {background:#fff3cd;color:#7b5500}.res-Confirmed {background:#d1fae5;color:#065f46}
+        .res-Cancelled {background:#f3f4f6;color:#4b5563}.res-Completed {background:#dbeafe;color:#1e40af}
+        .res-form label {font-weight:600;font-size:.88rem;margin-bottom:.3rem}
+    </style>
+}
+<div class="res-header">
+    <div>
+        <h1 class="res-title">Reservations</h1>
+        <p class="text-muted mb-0">Manage confirmed and pending table bookings. Times shown in Malaysia time (MYT).</p>
+    </div>
+    <a class="btn btn-outline-secondary" asp-page="/Admin/Tables"><i class="bi bi-diagram-3"></i> Tables &amp; Layout</a>
+</div>
+@if (TempData["SuccessMessage"] is string success)
+{
+    <div class="alert alert-success" role="alert">@success</div>
+}
+@if (TempData["ErrorMessage"] is string error)
+{
+    <div class="alert alert-danger" role="alert">@error</div>
+}
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-5">
+        <div class="res-card h-100">
+            <h2 class="h5 fw-bold mb-3"><i class="bi bi-calendar-plus text-warning me-2"></i>Create Reservation</h2>
+            @if (!Model.Customers.Any())
+            {
+                <div class="alert alert-warning">No active Customer accounts with passwords exist. Add a Customer through <a asp-page="/Admin/Accounts">Accounts</a> first.</div>
+            }
+            @if (!Model.Tables.Any())
+            {
+                <div class="alert alert-warning">No dining tables exist yet. Set them up under <a asp-page="/Admin/Tables">Tables</a>.</div>
+            }
+            <form method="post" asp-page-handler="Create" class="res-form" id="newReservationForm">
+                <div class="mb-3">
+                    <label for="customerId" class="form-label">Customer</label>
+                    <select name="customerId" id="customerId" class="form-select" required>
+                        <option value="">Select Customer</option>
+                        @foreach (var customer in Model.Customers)
+                        {
+                            <option value="@customer.Id">@customer.Name (@customer.Email)</option>
+                        }
+                    </select>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                        <label asp-for="NewBooking.StartLocal" class="form-label">Booking date &amp; time (MYT)</label>
+                        <input asp-for="NewBooking.StartLocal" asp-format="{0:yyyy-MM-ddTHH:mm}" type="datetime-local" step="900" class="form-control" required />
+                    </div>
+                    <div class="col-sm-6">
+                        <label asp-for="NewBooking.DurationMinutes" class="form-label">Duration</label>
+                        <select asp-for="NewBooking.DurationMinutes" class="form-select">
+                            @foreach (var minutes in new[] { 30, 60, 90, 120, 150, 180, 210, 240 })
+                            {
+                                <option value="@minutes">@minutes minutes</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-sm-6">
+                        <label asp-for="NewBooking.PartySize" class="form-label">Number of guests</label>
+                        <input asp-for="NewBooking.PartySize" type="number" min="1" max="20" class="form-control" required />
+                    </div>
+                    <div class="col-sm-6 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-dark w-100" id="checkAvailability">Check available tables</button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="NewBooking.TableId" class="form-label">Dining table</label>
+                    <select asp-for="NewBooking.TableId" id="newTableSelect" class="form-select" required>
+                        <option value="">Select or check availability</option>
+                        @foreach (var table in Model.Tables.Where(t => t.Status != "Maintenance"))
+                        {
+                            <option value="@table.Id">@table.TableNumber — @table.AreaName — @table.Capacity seats</option>
+                        }
+                    </select>
+                    <div id="availabilityMessage" class="form-text" aria-live="polite">The server validates capacity and prevents overlapping bookings when you submit.</div>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="NewBooking.SpecialRequests" class="form-label">Special requests (optional)</label>
+                    <textarea asp-for="NewBooking.SpecialRequests" class="form-control" rows="2" maxlength="500"></textarea>
+                </div>
+                <button type="submit" class="btn res-primary w-100" disabled="@(!Model.Customers.Any() || !Model.Tables.Any())">
+                    <i class="bi bi-calendar-check me-1"></i> Create &amp; Confirm
+                </button>
+            </form>
+        </div>
+    </div>
+    <div class="col-xl-7">
+        @if (Model.Editing is { Status: "Pending" or "Confirmed" })
+        {
+            <div class="res-card mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h5 fw-bold mb-0">Edit reservation #@Model.Editing.Id</h2>
+                    <a asp-page="/Admin/Reservations" class="btn btn-outline-secondary btn-sm">Close</a>
+                </div>
+                <p class="text-muted small">Customer: @Model.Editing.CustomerName. Changing an Administrator booking keeps its current status.</p>
+                <form method="post" asp-page-handler="Edit" class="row g-3 res-form">
+                    <input type="hidden" name="id" value="@Model.Editing.Id" />
+                    <div class="col-md-6">
+                        <label asp-for="EditBooking.StartLocal">Start (MYT)</label>
+                        <input asp-for="EditBooking.StartLocal" asp-format="{0:yyyy-MM-ddTHH:mm}" type="datetime-local" step="900" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="EditBooking.DurationMinutes">Duration</label>
+                        <select asp-for="EditBooking.DurationMinutes" class="form-select">
+                            @foreach (var minutes in new[] { 30, 60, 90, 120, 150, 180, 210, 240 })
+                            {
+                                <option value="@minutes">@minutes minutes</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="EditBooking.PartySize">Guests</label>
+                        <input asp-for="EditBooking.PartySize" type="number" min="1" max="20" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="EditBooking.TableId">Table</label>
+                        <select asp-for="EditBooking.TableId" class="form-select">
+                            @foreach (var table in Model.Tables.Where(t => t.Status != "Maintenance"))
+                            {
+                                <option value="@table.Id">@table.TableNumber (@table.Capacity seats)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="EditBooking.SpecialRequests">Special requests</label>
+                        <textarea asp-for="EditBooking.SpecialRequests" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="col-12"><button class="btn res-primary" type="submit">Save reservation changes</button></div>
+                </form>
+            </div>
+        }
+        <div class="res-card">
+            <h2 class="h5 fw-bold mb-3">Reservation board</h2>
+            <form method="get" class="row g-2 align-items-end mb-3">
+                <div class="col-sm-7"><label for="date" class="form-label small fw-semibold">Filter by date (MYT)</label>
+                    <input type="date" id="date" name="date" class="form-control" value="@(Model.SelectedDate?.ToString("yyyy-MM-dd"))" /></div>
+                <div class="col-sm-5 d-flex gap-2"><button type="submit" class="btn btn-dark flex-fill">Filter</button><a asp-page="/Admin/Reservations" class="btn btn-outline-secondary">Clear</a></div>
+            </form>
+            <p class="small text-muted">@(Model.SelectedDate.HasValue ? "Showing selected date" : "Showing the last 7 days and upcoming 90 days (up to 300 records)")</p>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead><tr><th>When (MYT)</th><th>Customer / Table</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        @foreach (var item in Model.Bookings)
+                        {
+                            <tr>
+                                <td><strong>@item.StartLocal.ToString("dd MMM yyyy")</strong><br /><span class="text-muted small">@item.StartLocal.ToString("HH:mm")–@item.EndLocal.ToString("HH:mm") · @item.PartySize guest(s)</span></td>
+                                <td><strong>@item.CustomerName</strong><br /><span class="text-muted small">#@item.Id · @item.TableNumber</span>
+                                    @if (!string.IsNullOrWhiteSpace(item.SpecialRequests))
+                                    {
+                                        <div class="small text-muted mt-1">@item.SpecialRequests</div>
+                                    }
+                                </td>
+                                <td><span class="res-badge res-@item.Status">@item.Status</span></td>
+                                <td>
+                                    <div class="d-flex gap-1 flex-wrap">
+                                        @if (item.Status is "Pending" or "Confirmed")
+                                        {
+                                            <a asp-page="/Admin/Reservations" asp-route-editId="@item.Id" class="btn btn-sm btn-outline-dark">Edit</a>
+                                        }
+                                        @if (item.Status == "Pending")
+                                        {
+                                            <form method="post" asp-page-handler="Confirm"><input type="hidden" name="id" value="@item.Id" /><button class="btn btn-sm btn-outline-success" type="submit">Confirm</button></form>
+                                        }
+                                        @if (item.Status == "Confirmed" && item.StartLocal <= ReservationClock.NowLocal)
+                                        {
+                                            <form method="post" asp-page-handler="Complete"><input type="hidden" name="id" value="@item.Id" /><button class="btn btn-sm btn-outline-primary" type="submit">Complete</button></form>
+                                        }
+                                        @if (item.Status is "Pending" or "Confirmed")
+                                        {
+                                            <form method="post" asp-page-handler="Cancel" onsubmit="return confirm('Cancel this reservation?')"><input type="hidden" name="id" value="@item.Id" /><button class="btn btn-sm btn-outline-danger" type="submit">Cancel</button></form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.Bookings.Any())
+                        {
+                            <tr><td colspan="4" class="text-muted py-4 text-center">No reservations found for this period.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        document.getElementById('checkAvailability')?.addEventListener('click', async () => {
+            const date = document.getElementById('NewBooking_StartLocal').value;
+            const duration = document.getElementById('NewBooking_DurationMinutes').value;
+            const partySize = document.getElementById('NewBooking_PartySize').value;
+            const select = document.getElementById('newTableSelect');
+            const message = document.getElementById('availabilityMessage');
+            if (!date || !partySize) { message.textContent = 'Enter a date/time and number of guests first.'; return; }
+            message.textContent = 'Checking…';
+            try {
+                const params = new URLSearchParams({ handler: 'Availability', startLocal: date, durationMinutes: duration, partySize });
+                const response = await fetch('/Admin/Reservations?' + params, { credentials: 'same-origin' });
+                if (!response.ok) throw new Error('Availability request failed');
+                const tables = await response.json();
+                select.replaceChildren(new Option('Select a table', ''));
+                tables.forEach(t => select.add(new Option(t.label, t.id)));
+                message.textContent = tables.length ? `${tables.length} table(s) available for that time.` : 'No matching tables. Try a different time or party size.';
+            } catch {
+                message.textContent = 'Could not check availability. Please try again.';
+            }
+        });
+    </script>
+}

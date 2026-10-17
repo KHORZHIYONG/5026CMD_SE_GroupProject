@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -157,6 +157,9 @@
         <a href="/Admin/Accounts" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Accounts" ? "active" : "")">
             <i class="bi bi-people-fill"></i> <span class="nav-text">Accounts</span>
         </a>
+        <a href="/Admin/Reservations" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Reservations" ? "active" : "")">
+            <i class="bi bi-calendar-check"></i> <span class="nav-text">Reservations</span>
+        </a>
         <a href="/Admin/Orders" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Orders" ? "active" : "")">
             <i class="bi bi-list-check"></i> <span class="nav-text">Live Orders</span>
         </a>
@@ -166,7 +169,11 @@
         </a>
 
         <div style="margin-top: auto; padding-bottom: 20px;">
-            <a href="/Login" class="nav-link"><i class="bi bi-box-arrow-left"></i> <span class="nav-text">Sign Out</span></a>
+            <form method="post" asp-page="/Logout" class="m-0">
+                <button type="submit" class="nav-link w-100 border-0 bg-transparent text-start">
+                    <i class="bi bi-box-arrow-left"></i> <span class="nav-text">Sign Out</span>
+                </button>
+            </form>
         </div>
     </nav>
 

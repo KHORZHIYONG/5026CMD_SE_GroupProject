@@ -1,0 +1,13 @@
+@page
+@model ResROMS.Pages.AccessDeniedModel
+@{
+    ViewData["Title"] = "Access Denied";
+}
+<div class="container py-5 text-center">
+    <h1>Access denied</h1>
+    <p>Your account is signed in but does not have Administrator access.</p>
+    <p>Staff and Customer dashboards will be implemented in later steps.</p>
+    <form method="post" asp-page="/Logout">
+        <button class="btn btn-primary" type="submit">Sign out and use a different account</button>
+    </form>
+</div>
