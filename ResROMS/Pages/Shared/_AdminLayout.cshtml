@@ -171,6 +171,13 @@
             <i class="bi bi-megaphone"></i> <span class="nav-text">Campaigns</span>
         </a>
 
+        <a href="/Admin/Announcements" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Announcements" ? "active" : "")">
+            <i class="bi bi-bell-fill"></i> <span class="nav-text">Announcements</span>
+        </a>
+        <a href="/Admin/SystemSettings" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/SystemSettings" ? "active" : "")">
+            <i class="bi bi-sliders"></i> <span class="nav-text">System Settings</span>
+        </a>
+
         <div style="margin-top: auto; padding-bottom: 20px;">
             <form method="post" asp-page="/Logout" class="m-0">
                 <button type="submit" class="nav-link w-100 border-0 bg-transparent text-start">

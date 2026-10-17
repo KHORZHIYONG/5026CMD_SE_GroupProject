@@ -39,6 +39,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cQWNjb3VudHMuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/Zykee/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Admin/Announcements.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cQW5ub3VuY2VtZW50cy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/Zykee/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Admin/Campaigns.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cQ2FtcGFpZ25zLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
@@ -71,12 +75,20 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cUmVzdGF1cmFudEluZm8uY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/Zykee/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Admin/SystemSettings.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cU3lzdGVtU2V0dGluZ3MuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/Zykee/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Admin/Tables.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cVGFibGVzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Zykee/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Admin/_ViewStart.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cX1ZpZXdTdGFydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Zykee/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Announcements.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQW5ub3VuY2VtZW50cy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Zykee/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Customer/Reservations.cshtml]

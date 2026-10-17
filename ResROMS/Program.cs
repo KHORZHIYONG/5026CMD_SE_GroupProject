@@ -19,6 +19,8 @@ builder.Services.AddScoped<IRestaurantManagementService, RestaurantManagementSer
 builder.Services.AddScoped<ICampaignManagementService, CampaignManagementService>();
 builder.Services.AddScoped<IOrderManagementService, OrderManagementService>();
 builder.Services.AddScoped<IAdminReportingService, AdminReportingService>();
+builder.Services.AddScoped<IAdminSettingsService, AdminSettingsService>();
+builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

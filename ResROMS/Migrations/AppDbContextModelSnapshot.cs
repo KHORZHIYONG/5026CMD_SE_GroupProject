@@ -22,6 +22,67 @@ namespace ResROMS.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ResROMS.Models.Announcement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Audience")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EndsUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FirstPublishedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("StartsUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(140)
+                        .HasColumnType("nvarchar(140)");
+
+                    b.Property<DateTime>("UpdatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("IsPublished", "IsArchived", "StartsUtc");
+
+                    b.ToTable("Announcements", t =>
+                        {
+                            t.HasCheckConstraint("CK_Announcements_Audience", "[Audience] IN ('All','Customer','Staff')");
+
+                            t.HasCheckConstraint("CK_Announcements_DateRange", "[EndsUtc] IS NULL OR [EndsUtc] > [StartsUtc]");
+                        });
+                });
+
             modelBuilder.Entity("ResROMS.Models.Campaign", b =>
                 {
                     b.Property<int>("Id")
@@ -455,6 +516,41 @@ namespace ResROMS.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ResROMS.Models.SystemSetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("CustomerBookingsEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("MaximumBookingAdvanceDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(90);
+
+                    b.Property<int>("MinimumBookingNoticeMinutes")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(15);
+
+                    b.Property<DateTime>("UpdatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SystemSettings", t =>
+                        {
+                            t.HasCheckConstraint("CK_SystemSettings_MaxAdvance", "[MaximumBookingAdvanceDays] BETWEEN 1 AND 365");
+
+                            t.HasCheckConstraint("CK_SystemSettings_MinNotice", "[MinimumBookingNoticeMinutes] BETWEEN 0 AND 1440");
+
+                            t.HasCheckConstraint("CK_SystemSettings_Singleton", "[Id] = 1");
+                        });
+                });
+
             modelBuilder.Entity("ResROMS.Models.Table", b =>
                 {
                     b.Property<int>("Id")
@@ -542,6 +638,16 @@ namespace ResROMS.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("ResROMS.Models.Announcement", b =>
+                {
+                    b.HasOne("ResROMS.Models.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedByUser");
                 });
 
             modelBuilder.Entity("ResROMS.Models.MenuItem", b =>

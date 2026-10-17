@@ -19,6 +19,8 @@ namespace ResROMS.Data
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<Payment> Payments { get; set; }
+        public DbSet<SystemSetting> SystemSettings { get; set; }
+        public DbSet<Announcement> Announcements { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -170,6 +172,41 @@ namespace ResROMS.Data
                     table.HasCheckConstraint("CK_Payments_Status",
                         "[Status] IN ('Paid','Refunded')");
                     table.HasCheckConstraint("CK_Payments_Amount", "[Amount] >= 0");
+                });
+            });
+
+            modelBuilder.Entity<SystemSetting>(setting =>
+            {
+                setting.HasKey(s => s.Id);
+                setting.Property(s => s.Id).ValueGeneratedNever();
+                setting.Property(s => s.CustomerBookingsEnabled).HasDefaultValue(true);
+                setting.Property(s => s.MinimumBookingNoticeMinutes).HasDefaultValue(15);
+                setting.Property(s => s.MaximumBookingAdvanceDays).HasDefaultValue(90);
+                setting.ToTable(table =>
+                {
+                    table.HasCheckConstraint("CK_SystemSettings_Singleton", "[Id] = 1");
+                    table.HasCheckConstraint("CK_SystemSettings_MinNotice",
+                        "[MinimumBookingNoticeMinutes] BETWEEN 0 AND 1440");
+                    table.HasCheckConstraint("CK_SystemSettings_MaxAdvance",
+                        "[MaximumBookingAdvanceDays] BETWEEN 1 AND 365");
+                });
+            });
+
+            modelBuilder.Entity<Announcement>(announcement =>
+            {
+                announcement.Property(a => a.Title).HasMaxLength(140);
+                announcement.Property(a => a.Body).HasMaxLength(2000);
+                announcement.Property(a => a.Audience).HasMaxLength(20);
+                announcement.HasIndex(a => new { a.IsPublished, a.IsArchived, a.StartsUtc });
+                announcement.HasOne(a => a.CreatedByUser).WithMany()
+                    .HasForeignKey(a => a.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                announcement.ToTable(table =>
+                {
+                    table.HasCheckConstraint("CK_Announcements_Audience",
+                        "[Audience] IN ('All','Customer','Staff')");
+                    table.HasCheckConstraint("CK_Announcements_DateRange",
+                        "[EndsUtc] IS NULL OR [EndsUtc] > [StartsUtc]");
                 });
             });
 

@@ -14,7 +14,7 @@ public interface IReservationService
     Task<IReadOnlyList<ReservationCustomerOption>> GetCustomersAsync();
     Task<IReadOnlyList<ReservationTableOption>> GetTablesAsync();
     Task<IReadOnlyList<ReservationTableOption>> FindAvailableTablesAsync(DateTime startLocal,
-        int durationMinutes, int partySize);
+        int durationMinutes, int partySize, bool forCustomer = false);
     Task<IReadOnlyList<ReservationSummary>> GetForAdminAsync(DateTime? dateLocal);
     Task<IReadOnlyList<ReservationSummary>> GetForCustomerAsync(int customerId);
     Task<ReservationSummary?> FindAsync(int id, int? customerId = null);

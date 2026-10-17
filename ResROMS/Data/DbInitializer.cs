@@ -51,6 +51,14 @@ public static class DbInitializer
                     OpeningTime = new TimeOnly(9, 0), ClosingTime = new TimeOnly(22, 0)
                 });
         }
+        if (!context.SystemSettings.Any())
+        {
+            context.SystemSettings.Add(new SystemSetting
+            {
+                Id = 1, CustomerBookingsEnabled = true,
+                MinimumBookingNoticeMinutes = 15, MaximumBookingAdvanceDays = 90
+            });
+        }
         context.SaveChanges();
     }
 }

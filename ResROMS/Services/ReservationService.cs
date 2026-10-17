@@ -34,9 +34,9 @@ public sealed class ReservationService : IReservationService
             .ToListAsync();
 
     public async Task<IReadOnlyList<ReservationTableOption>> FindAvailableTablesAsync(
-        DateTime startLocal, int durationMinutes, int partySize)
+        DateTime startLocal, int durationMinutes, int partySize, bool forCustomer = false)
     {
-        if (ValidateSlot(startLocal, durationMinutes, partySize) != null) return [];
+        if (await ValidateSlotAsync(startLocal, durationMinutes, partySize, forCustomer) != null) return [];
         var startUtc = ReservationClock.ToUtc(startLocal);
         var endUtc = startUtc.AddMinutes(durationMinutes);
         var hours = await LoadHoursAsync();
@@ -107,7 +107,8 @@ public sealed class ReservationService : IReservationService
     private async Task<ReservationResult> SaveBookingAsync(int? id, int? customerId,
         ReservationRequest input, bool isAdmin)
     {
-        var error = ValidateSlot(input.StartLocal, input.DurationMinutes, input.PartySize);
+        var error = await ValidateSlotAsync(input.StartLocal, input.DurationMinutes, input.PartySize,
+            forCustomer: !isAdmin);
         if (error != null) return Fail(error);
         var notes = (input.SpecialRequests ?? string.Empty).Trim();
         if (notes.Length > 500) return Fail("Special requests must contain no more than 500 characters.");
@@ -254,16 +255,24 @@ public sealed class ReservationService : IReservationService
             .Select(h => new WeeklyHours(h.DayOfWeek, h.IsClosed, h.OpeningTime, h.ClosingTime))
             .ToListAsync();
 
-    private static string? ValidateSlot(DateTime startLocal, int durationMinutes, int partySize)
+    private async Task<string?> ValidateSlotAsync(DateTime startLocal, int durationMinutes,
+        int partySize, bool forCustomer)
     {
         if (partySize is < 1 or > 20) return "Party size must be between 1 and 20.";
         if (durationMinutes is < 30 or > 240 || durationMinutes % 30 != 0)
             return "Duration must be 30–240 minutes in 30-minute steps.";
         if (startLocal == default || startLocal.Second != 0 || startLocal.Minute % 15 != 0)
             return "Choose a start time on a 15-minute interval (e.g. 18:00 or 18:15).";
+
+        var settings = await _db.SystemSettings.AsNoTracking().SingleOrDefaultAsync(s => s.Id == 1);
+        if (settings is null) return "Reservation policy is not configured. Contact an Administrator.";
+        if (forCustomer && !settings.CustomerBookingsEnabled)
+            return "Online customer booking requests are temporarily disabled.";
         var now = ReservationClock.NowLocal;
-        if (startLocal < now.AddMinutes(15)) return "Bookings must start at least 15 minutes from now.";
-        if (startLocal > now.AddDays(90)) return "Bookings may only be made up to 90 days ahead.";
+        if (startLocal < now.AddMinutes(settings.MinimumBookingNoticeMinutes))
+            return $"Bookings must start at least {settings.MinimumBookingNoticeMinutes} minutes from now.";
+        if (startLocal > now.AddDays(settings.MaximumBookingAdvanceDays))
+            return $"Bookings may only be made up to {settings.MaximumBookingAdvanceDays} days ahead.";
         return null;
     }
 

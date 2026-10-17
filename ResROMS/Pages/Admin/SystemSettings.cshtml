@@ -1,0 +1,50 @@
+@page "/Admin/SystemSettings"
+@model ResROMS.Pages.Admin.SystemSettingsModel
+@{
+    ViewData["Title"] = "System Settings";
+}
+@section Styles {
+    <style>
+        .settings-card {background:#fff;max-width:880px;border:1px solid #e5ebef;border-radius:16px;padding:30px;box-shadow:0 5px 20px rgba(0,0,0,.035)}
+        .primary-action {background:#e85d04;color:white;border:0}.primary-action:hover {background:#cc4b00;color:white}
+        .settings-note {border-left:4px solid #e85d04;background:#fff8f3;padding:16px;border-radius:8px;color:#554637}
+    </style>
+}
+<div class="mb-4">
+    <h1 class="fw-bold mb-1">System Settings</h1>
+    <p class="text-muted">Set reservation policies that are saved in SQL Server and enforced when bookings are submitted.</p>
+</div>
+@if (TempData["SuccessMessage"] is string success)
+{
+    <div class="alert alert-success" role="status">@success</div>
+}
+<div class="settings-card">
+    <h2 class="h5 fw-bold mb-3">Customer booking policy</h2>
+    <div asp-validation-summary="All" class="text-danger small mb-3"></div>
+    <form method="post" asp-page-handler="Save">
+        <div class="form-check form-switch mb-4">
+            <input class="form-check-input" type="checkbox" asp-for="Form.CustomerBookingsEnabled" />
+            <label class="form-check-label fw-semibold" asp-for="Form.CustomerBookingsEnabled">Allow customers to create and modify reservations</label>
+            <p class="form-text">When disabled, Customers can still see their reservation history and cancel an existing reservation. Administrators can still manage bookings.</p>
+        </div>
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold" asp-for="Form.MinimumBookingNoticeMinutes">Minimum notice (minutes)</label>
+                <input class="form-control" type="number" asp-for="Form.MinimumBookingNoticeMinutes" min="0" max="1440" required />
+                <span asp-validation-for="Form.MinimumBookingNoticeMinutes" class="text-danger small"></span>
+                <div class="form-text">Default: 15 minutes. Applies to Admin and Customer bookings.</div>
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold" asp-for="Form.MaximumBookingAdvanceDays">Maximum advance booking (days)</label>
+                <input class="form-control" type="number" asp-for="Form.MaximumBookingAdvanceDays" min="1" max="365" required />
+                <span asp-validation-for="Form.MaximumBookingAdvanceDays" class="text-danger small"></span>
+                <div class="form-text">Default: 90 days. Applies to Admin and Customer bookings.</div>
+            </div>
+        </div>
+        <div class="settings-note my-4 small">
+            Operating hours and table availability still apply. Existing reservations are not automatically cancelled or changed if these policies are updated.
+            Administrator session expiration and other security policies remain configured in application code, not through this page.
+        </div>
+        <button class="btn primary-action px-4" type="submit"><i class="bi bi-check2-circle me-1"></i> Save Settings</button>
+    </form>
+</div>

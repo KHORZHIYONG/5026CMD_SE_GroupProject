@@ -9,7 +9,13 @@ namespace ResROMS.Pages.Customer;
 public sealed class ReservationsModel : PageModel
 {
     private readonly IReservationService _reservations;
-    public ReservationsModel(IReservationService reservations) => _reservations = reservations;
+    private readonly IAdminSettingsService _settings;
+    public ReservationsModel(IReservationService reservations, IAdminSettingsService settings)
+    {
+        _reservations = reservations;
+        _settings = settings;
+    }
+    public bool CustomerBookingsEnabled { get; private set; } = true;
 
     public sealed class BookingFields
     {
@@ -32,6 +38,8 @@ public sealed class ReservationsModel : PageModel
     public async Task<IActionResult> OnGetAsync(int? editId = null)
     {
         if (CustomerId == 0) return Challenge();
+        var policy = await _settings.GetAsync();
+        CustomerBookingsEnabled = policy.CustomerBookingsEnabled;
         Bookings = await _reservations.GetForCustomerAsync(CustomerId);
         Tables = await _reservations.GetTablesAsync();
         var next = ReservationClock.NowLocal.AddHours(1);
@@ -58,7 +66,7 @@ public sealed class ReservationsModel : PageModel
     public async Task<IActionResult> OnGetAvailabilityAsync(DateTime startLocal,
         int durationMinutes, int partySize)
     {
-        var options = await _reservations.FindAvailableTablesAsync(startLocal, durationMinutes, partySize);
+        var options = await _reservations.FindAvailableTablesAsync(startLocal, durationMinutes, partySize, forCustomer: true);
         return new JsonResult(options.Select(t => new
         {
             id = t.Id,

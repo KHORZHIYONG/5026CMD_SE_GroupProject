@@ -1,0 +1,145 @@
+@page "/Admin/Announcements"
+@model ResROMS.Pages.Admin.AnnouncementsModel
+@{
+    ViewData["Title"] = "Announcements";
+}
+@section Styles {
+<style>
+    .announce-card{background:#fff;border:1px solid #edf1f5;border-radius:15px;padding:20px;box-shadow:0 4px 18px rgba(0,0,0,.035)}
+    .announce-action{background:#e85d04;color:#fff;border:0}.announce-action:hover{background:#d55000;color:#fff}
+    .announce-body{white-space:pre-line;overflow-wrap:anywhere}
+    .announce-edit{background:#f9fbfd;border:1px solid #e2e8f0;border-radius:10px;padding:15px}
+</style>
+}
+<div class="d-flex justify-content-between gap-3 align-items-start flex-wrap mb-4">
+    <div>
+        <h1 class="fw-bold mb-1">Announcements</h1>
+        <p class="text-muted mb-0">Publish and schedule notices for signed-in customers and staff. Times shown in Malaysia time (MYT).</p>
+    </div>
+    <a href="/Announcements" class="btn btn-outline-secondary"><i class="bi bi-eye me-1"></i> View published feed</a>
+</div>
+@if (TempData["SuccessMessage"] is string success) { <div class="alert alert-success" role="status">@success</div> }
+@if (TempData["ErrorMessage"] is string error) { <div class="alert alert-danger" role="alert">@error</div> }
+<div class="row g-4">
+    <div class="col-xl-4">
+        <div class="announce-card">
+            <h2 class="h5 fw-bold mb-3">New announcement</h2>
+            <div asp-validation-summary="All" class="text-danger small"></div>
+            <form method="post" asp-page-handler="Create">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" asp-for="Form.Title">Title</label>
+                    <input class="form-control" asp-for="Form.Title" maxlength="140" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" asp-for="Form.Body">Message</label>
+                    <textarea class="form-control" asp-for="Form.Body" rows="5" maxlength="2000" required></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" asp-for="Form.Audience">Audience</label>
+                    <select class="form-select" asp-for="Form.Audience">
+                        <option value="All">All signed-in users</option>
+                        <option value="Customer">Customers only</option>
+                        <option value="Staff">Staff only</option>
+                    </select>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold" asp-for="Form.StartLocal">Start (MYT)</label>
+                        <input class="form-control" asp-for="Form.StartLocal" asp-format="{0:yyyy-MM-ddTHH:mm}" type="datetime-local" step="60" required />
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold" asp-for="Form.EndLocal">End (optional)</label>
+                        <input class="form-control" asp-for="Form.EndLocal" asp-format="{0:yyyy-MM-ddTHH:mm}" type="datetime-local" step="60" />
+                    </div>
+                </div>
+                <button type="submit" class="btn announce-action w-100">Save draft</button>
+            </form>
+            <p class="small text-muted mt-3 mb-0">New posts are drafts. Publish a draft to make it visible immediately or at its scheduled start time. Expired posts automatically disappear from the feed.</p>
+        </div>
+    </div>
+    <div class="col-xl-8">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h5 fw-bold mb-0">Saved announcements</h2>
+            <span class="text-muted small">Latest 250</span>
+        </div>
+        @if (Model.Announcements.Count == 0)
+        {
+            <div class="alert alert-light border">No announcements yet.</div>
+        }
+        @foreach (var a in Model.Announcements)
+        {
+            var badge = a.Status switch { "Live" => "bg-success", "Scheduled" => "bg-info text-dark", "Expired" => "bg-secondary", "Archived" => "bg-dark", _ => "bg-warning text-dark" };
+            <article class="announce-card mb-3">
+                <div class="d-flex align-items-start justify-content-between gap-3 mb-2">
+                    <div>
+                        <h3 class="h6 fw-bold mb-1">@a.Title</h3>
+                        <div class="small text-muted">@a.Audience · Starts @a.StartLocal.ToString("dd MMM yyyy HH:mm") MYT
+                            @if (a.EndLocal.HasValue) { <span> · Ends @a.EndLocal.Value.ToString("dd MMM yyyy HH:mm") MYT</span> }
+                        </div>
+                    </div>
+                    <span class="badge @badge">@a.Status</span>
+                </div>
+                <div class="announce-body mb-3">@a.Body</div>
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    @if (!a.IsArchived)
+                    {
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#edit-announcement-@a.Id">Edit</button>
+                        @if (a.IsPublished)
+                        {
+                            <form method="post" asp-page-handler="Unpublish" asp-route-id="@a.Id"><button type="submit" class="btn btn-outline-warning btn-sm">Unpublish</button></form>
+                        }
+                        else
+                        {
+                            <form method="post" asp-page-handler="Publish" asp-route-id="@a.Id"><button type="submit" class="btn btn-outline-success btn-sm">Publish</button></form>
+                        }
+                        <form method="post" asp-page-handler="Archive" asp-route-id="@a.Id"><button type="submit" class="btn btn-outline-dark btn-sm">Archive</button></form>
+                        @if (!a.WasPublished)
+                        {
+                            <form method="post" asp-page-handler="Delete" asp-route-id="@a.Id" onsubmit="return confirm('Delete this unpublished draft permanently?');"><button type="submit" class="btn btn-outline-danger btn-sm">Delete draft</button></form>
+                        }
+                    }
+                    else
+                    {
+                        <form method="post" asp-page-handler="Restore" asp-route-id="@a.Id"><button type="submit" class="btn btn-outline-primary btn-sm">Restore draft</button></form>
+                    }
+                </div>
+                @if (!a.IsArchived)
+                {
+                    <div class="collapse mt-3" id="edit-announcement-@a.Id">
+                        <div class="announce-edit">
+                            <form method="post" asp-page-handler="Edit" asp-route-id="@a.Id">
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold">Title</label>
+                                    <input name="Form.Title" class="form-control form-control-sm" value="@a.Title" maxlength="140" required />
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold">Message</label>
+                                    <textarea name="Form.Body" rows="3" class="form-control form-control-sm" maxlength="2000" required>@a.Body</textarea>
+                                </div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold">Audience</label>
+                                        <select name="Form.Audience" class="form-select form-select-sm">
+                                            <option value="All" selected="@(a.Audience == "All")">All</option>
+                                            <option value="Customer" selected="@(a.Audience == "Customer")">Customer</option>
+                                            <option value="Staff" selected="@(a.Audience == "Staff")">Staff</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold">Start (MYT)</label>
+                                        <input type="datetime-local" name="Form.StartLocal" class="form-control form-control-sm" step="60" value="@a.StartLocal.ToString("yyyy-MM-ddTHH:mm")" required />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold">End (MYT)</label>
+                                        <input type="datetime-local" name="Form.EndLocal" class="form-control form-control-sm" step="60" value="@(a.EndLocal?.ToString("yyyy-MM-ddTHH:mm"))" />
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn announce-action btn-sm">Save changes</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </article>
+        }
+    </div>
+</div>
