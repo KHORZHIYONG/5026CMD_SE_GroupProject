@@ -36,6 +36,11 @@ namespace ResROMS.Pages.Admin
             var item = await _context.MenuItems.FindAsync(id);
             if (item != null)
             {
+                if (await _context.OrderItems.AnyAsync(oi => oi.MenuItemId == id))
+                {
+                    TempData["ErrorMessage"] = "This dish appears in order history. Mark it unavailable instead of deleting it.";
+                    return RedirectToPage();
+                }
                 _context.MenuItems.Remove(item);
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = $"Dish '{item.Name}' removed from the menu.";

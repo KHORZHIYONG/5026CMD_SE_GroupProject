@@ -1,0 +1,72 @@
+@page "/Admin/Payments"
+@model ResROMS.Pages.Admin.PaymentsModel
+@{
+    ViewData["Title"] = "Payment Records";
+}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div><h1 class="h3 fw-bold mb-1">Payment Records</h1>
+        <p class="text-muted mb-0">Admin payment monitoring and manual payment bookkeeping.</p></div>
+    <a class="btn btn-outline-dark" href="/Admin/Orders"><i class="bi bi-arrow-left me-1"></i>Orders</a>
+</div>
+@if (TempData["SuccessMessage"] is string good) { <div class="alert alert-success">@good</div> }
+@if (TempData["ErrorMessage"] is string error) { <div class="alert alert-danger">@error</div> }
+<div class="alert alert-info small">
+    <strong>Manual records only:</strong> This page does not charge cards, transfer funds, or initiate refunds.
+    Confirm money has actually been received before recording a payment; only mark a payment refunded after a real refund has been performed through the relevant external channel.
+</div>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h2 class="h5">Record received payment</h2>
+        <form method="post" asp-page-handler="Record" class="row g-3 align-items-end">
+            <div class="col-lg-5"><label class="form-label">Unpaid order</label>
+                <select class="form-select" asp-for="NewPayment.OrderId" required>
+                    <option value="">Choose order</option>
+                    @foreach (var order in Model.UnpaidOrders) { <option value="@order.Id">@order.Label</option> }
+                </select>
+            </div>
+            <div class="col-lg-3"><label class="form-label">Payment method</label>
+                <select class="form-select" asp-for="NewPayment.Method">
+                    <option value="Cash">Cash</option><option value="Card">Card (externally processed)</option><option value="BankTransfer">Bank transfer</option>
+                </select>
+            </div>
+            <div class="col-lg-2"><label class="form-label">Reference (optional)</label>
+                <input class="form-control" asp-for="NewPayment.Reference" maxlength="100" placeholder="Receipt ID" />
+            </div>
+            <div class="col-lg-2"><button type="submit" class="btn btn-dark w-100">Record Paid</button></div>
+        </form>
+    </div>
+</div>
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <h2 class="h5 mb-3">Payment history</h2>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead><tr><th>Payment</th><th>Order</th><th>Amount</th><th>Method</th><th>Reference</th><th>Recorded by</th><th>Date (Malaysia)</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody>
+                @foreach (var payment in Model.Payments)
+                {
+                    <tr>
+                        <td>#@payment.Id</td><td>#@payment.OrderId</td><td>RM @payment.Amount.ToString("F2")</td>
+                        <td>@payment.Method</td><td>@(payment.Reference ?? "—")</td><td>@payment.RecordedBy</td>
+                        <td>@payment.RecordedLocal.ToString("dd MMM yyyy, hh:mm tt")</td>
+                        <td><span class="badge @(payment.Status == "Paid" ? "text-bg-success" : "text-bg-warning")">@payment.Status</span>
+                            @if (payment.RefundedLocal.HasValue) { <div class="text-muted small">@payment.RefundedLocal.Value.ToString("dd MMM yyyy")</div> }</td>
+                        <td>
+                            @if (payment.Status == "Paid")
+                            {
+                                <form method="post" asp-page-handler="Refund" onsubmit="return confirm('Only proceed if the actual refund has already been completed outside the application. Mark this payment refunded?');">
+                                    <input type="hidden" name="paymentId" value="@payment.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-warning">Mark Refunded</button>
+                                </form>
+                            }
+                            else { <span class="text-muted small">Closed</span> }
+                        </td>
+                    </tr>
+                }
+                @if (Model.Payments.Count == 0) { <tr><td colspan="9" class="text-center text-muted p-4">No payments have been recorded.</td></tr> }
+                </tbody>
+            </table>
+        </div>
+        <p class="small text-muted mb-0">Showing up to 200 most recent payment records. Payment amounts use saved order totals, not values submitted by the browser.</p>
+    </div>
+</div>

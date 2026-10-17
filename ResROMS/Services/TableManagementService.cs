@@ -118,6 +118,8 @@ public sealed class TableManagementService : ITableManagementService
         // Preserve past reservation history rather than silently deleting it.
         if (await _db.Reservations.AnyAsync(r => r.TableId == id))
             return Error("This table has reservation history and cannot be deleted. Mark it Maintenance instead.");
+        if (await _db.Orders.AnyAsync(o => o.TableId == id))
+            return Error("This table has order history and cannot be deleted. Mark it Maintenance instead.");
         _db.Tables.Remove(table);
         return await SaveAsync($"Table '{table.TableNumber}' deleted.");
     }

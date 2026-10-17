@@ -39,6 +39,9 @@ public sealed class ReservationService : IReservationService
         if (ValidateSlot(startLocal, durationMinutes, partySize) != null) return [];
         var startUtc = ReservationClock.ToUtc(startLocal);
         var endUtc = startUtc.AddMinutes(durationMinutes);
+        var hours = await LoadHoursAsync();
+        if (!OpeningHoursPolicy.IsWithinHours(startLocal, ReservationClock.ToLocal(endUtc), hours))
+            return [];
         return await _db.Tables.AsNoTracking()
             .Where(t => t.Status != "Maintenance" && t.Capacity >= partySize)
             .Where(t => !_db.Reservations.Any(r => r.TableId == t.Id &&
@@ -114,6 +117,15 @@ public sealed class ReservationService : IReservationService
         try
         {
             await using var transaction = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            // Serialize booking creation against changes to restaurant hours.
+            var profile = await _db.RestaurantProfiles.FromSqlInterpolated(
+                $"SELECT * FROM dbo.RestaurantProfiles WITH (UPDLOCK, HOLDLOCK) WHERE Id = {1}")
+                .AsNoTracking().SingleOrDefaultAsync();
+            if (profile is null) return Fail("Restaurant settings have not been configured.");
+            var hours = await LoadHoursAsync();
+            if (!OpeningHoursPolicy.IsWithinHours(input.StartLocal, ReservationClock.ToLocal(endUtc), hours))
+                return Fail("The selected reservation must fit completely within the restaurant's opening hours.");
+
             Reservation? booking = null;
             if (id.HasValue)
             {
@@ -236,6 +248,11 @@ public sealed class ReservationService : IReservationService
             return Fail("The reservation changed while processing. Please retry.");
         }
     }
+
+    private async Task<IReadOnlyList<WeeklyHours>> LoadHoursAsync() =>
+        await _db.OperatingHours.AsNoTracking()
+            .Select(h => new WeeklyHours(h.DayOfWeek, h.IsClosed, h.OpeningTime, h.ClosingTime))
+            .ToListAsync();
 
     private static string? ValidateSlot(DateTime startLocal, int durationMinutes, int partySize)
     {

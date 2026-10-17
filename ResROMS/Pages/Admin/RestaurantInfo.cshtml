@@ -1,4 +1,4 @@
-﻿@page "/Admin/RestaurantInfo"
+@page "/Admin/RestaurantInfo"
 @model ResROMS.Pages.Admin.RestaurantInfoModel
 @{
     ViewData["Title"] = "Restaurant Setup";
@@ -6,113 +6,71 @@
 
 @section Styles {
     <style>
-        .page-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #2d3748;
-            margin-bottom: 25px;
-        }
-
-        /* Tab Customization */
-        .nav-tabs .nav-link {
-            color: #718096;
-            font-weight: 500;
-            border: none;
-            border-bottom: 3px solid transparent;
-            padding: 12px 20px;
-            margin-bottom: -1px;
-        }
-
-            .nav-tabs .nav-link:hover {
-                border-color: transparent;
-                color: #e85d04;
-            }
-
-            .nav-tabs .nav-link.active {
-                color: #e85d04;
-                background: transparent;
-                border-color: transparent;
-                border-bottom: 3px solid #e85d04;
-            }
-
-        .tab-card {
-            background: #ffffff;
-            border-radius: 0 0 12px 12px;
-            border-top-right-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            padding: 30px;
-            border: none;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: #4a5568;
-            font-size: 0.95rem;
-        }
-
-        .btn-primary-custom {
-            background-color: #e85d04;
-            border: none;
-            padding: 10px 25px;
-            font-weight: 600;
-            border-radius: 8px;
-            color: white;
-        }
-
-            .btn-primary-custom:hover {
-                background-color: #dc2f02;
-                color: white;
-            }
+        .page-title { font-size:1.8rem;font-weight:700;color:#2d3748;margin-bottom:25px; }
+        .nav-tabs .nav-link { color:#718096;font-weight:500;border:none;border-bottom:3px solid transparent;padding:12px 20px;margin-bottom:-1px; }
+        .nav-tabs .nav-link:hover { color:#e85d04; }
+        .nav-tabs .nav-link.active { color:#e85d04;background:transparent;border-bottom:3px solid #e85d04; }
+        .tab-card { background:#fff;border-radius:0 0 12px 12px;border-top-right-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,.03);padding:30px;border:none; }
+        .form-label { font-weight:600;color:#4a5568;font-size:.95rem; }
+        .btn-primary-custom { background:#e85d04;border:none;padding:10px 25px;font-weight:600;border-radius:8px;color:#fff; }
+        .btn-primary-custom:hover { background:#dc2f02;color:#fff; }
+        .hours-row { border-bottom:1px solid #edf2f7;padding:12px 0; }
+        .hours-row:last-child { border-bottom:0; }
+        .hours-row .form-check { min-width:110px; }
     </style>
 }
 
 <h1 class="page-title">Restaurant Setup</h1>
 
-@if (TempData["SuccessMessage"] != null)
+@if (TempData["SuccessMessage"] is string successMessage)
 {
-    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
-        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@successMessage
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+@if (!ViewData.ModelState.IsValid)
+{
+    <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+}
 
-<!-- Nav Tabs -->
 <ul class="nav nav-tabs" id="setupTabs" role="tablist">
     <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">General Info</button>
+        <button class="nav-link @(Model.ActiveTab == "general" ? "active" : "")" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab" aria-selected="@(Model.ActiveTab == "general" ? "true" : "false")">General Info</button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link" id="hours-tab" data-bs-toggle="tab" data-bs-target="#hours" type="button" role="tab">Operating Hours</button>
+        <button class="nav-link @(Model.ActiveTab == "hours" ? "active" : "")" id="hours-tab" data-bs-toggle="tab" data-bs-target="#hours" type="button" role="tab" aria-selected="@(Model.ActiveTab == "hours" ? "true" : "false")">Operating Hours</button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link" id="areas-tab" data-bs-toggle="tab" data-bs-target="#areas" type="button" role="tab">Dining Areas & Tables</button>
+        <button class="nav-link @(Model.ActiveTab == "areas" ? "active" : "")" id="areas-tab" data-bs-toggle="tab" data-bs-target="#areas" type="button" role="tab" aria-selected="@(Model.ActiveTab == "areas" ? "true" : "false")">Dining Areas &amp; Tables</button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link" id="categories-tab" data-bs-toggle="tab" data-bs-target="#categories" type="button" role="tab">Menu Categories</button>
+        <button class="nav-link @(Model.ActiveTab == "categories" ? "active" : "")" id="categories-tab" data-bs-toggle="tab" data-bs-target="#categories" type="button" role="tab" aria-selected="@(Model.ActiveTab == "categories" ? "true" : "false")">Menu Categories</button>
     </li>
 </ul>
 
-<!-- Tab Content -->
 <div class="tab-content tab-card" id="setupTabsContent">
-
-    <!-- 1. General Info Tab -->
-    <div class="tab-pane fade show active" id="general" role="tabpanel">
+    <div class="tab-pane fade @(Model.ActiveTab == "general" ? "show active" : "")" id="general" role="tabpanel" aria-labelledby="general-tab">
         <h4 class="mb-4 text-dark fw-bold">Basic Information</h4>
-        <form method="post">
+        <form method="post" asp-page-handler="SaveInfo" asp-antiforgery="true">
             <div class="row g-4 mb-4">
                 <div class="col-md-6">
                     <label asp-for="Input.Name" class="form-label"></label>
-                    <input asp-for="Input.Name" class="form-control" placeholder="e.g. The Rustic Spoon" />
+                    <input asp-for="Input.Name" class="form-control" placeholder="Restaurant name" />
                     <span asp-validation-for="Input.Name" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">
                     <label asp-for="Input.Phone" class="form-label"></label>
-                    <input asp-for="Input.Phone" class="form-control" placeholder="e.g. +1 234 567 8900" />
+                    <input asp-for="Input.Phone" class="form-control" placeholder="Contact number" />
                     <span asp-validation-for="Input.Phone" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">
                     <label asp-for="Input.Email" class="form-label"></label>
-                    <input asp-for="Input.Email" class="form-control" placeholder="contact@restaurant.com" />
+                    <input asp-for="Input.Email" class="form-control" placeholder="contact@example.com" />
                     <span asp-validation-for="Input.Email" class="text-danger small"></span>
                 </div>
                 <div class="col-md-12">
@@ -125,62 +83,78 @@
         </form>
     </div>
 
-    <!-- 2. Operating Hours Tab -->
-    <div class="tab-pane fade" id="hours" role="tabpanel">
-        <h4 class="mb-4 text-dark fw-bold">Operating Hours</h4>
-        <p class="text-muted mb-4">Set your standard opening and closing times. Leave fields blank if closed.</p>
-        <div class="row align-items-center mb-3">
-            <div class="col-md-2 fw-bold">Monday</div>
-            <div class="col-md-3"><input type="time" class="form-control" value="09:00"></div>
-            <div class="col-md-1 text-center">to</div>
-            <div class="col-md-3"><input type="time" class="form-control" value="22:00"></div>
-        </div>
-        <button type="button" class="btn btn-primary-custom mt-3">Update Hours</button>
+    <div class="tab-pane fade @(Model.ActiveTab == "hours" ? "show active" : "")" id="hours" role="tabpanel" aria-labelledby="hours-tab">
+        <h4 class="mb-4 text-dark fw-bold">Weekly Operating Hours</h4>
+        <p class="text-muted">These hours control new table reservations. Tick <strong>Closed</strong> for days when the restaurant does not operate. A closing time earlier than opening time means the following day (for example, 18:00–02:00).</p>
+        <p class="small text-warning">The initial 09:00–22:00 schedule is a demonstration default. Confirm every day before treating it as your restaurant's actual hours.</p>
+        <form method="post" asp-page-handler="SaveHours" asp-antiforgery="true">
+            @for (int i = 0; i < Model.Hours.Count; i++)
+            {
+                <div class="row align-items-center g-3 hours-row">
+                    <div class="col-lg-2 fw-semibold">
+                        @(((DayOfWeek)Model.Hours[i].DayOfWeek).ToString())
+                        <input type="hidden" asp-for="Hours[i].DayOfWeek" />
+                    </div>
+                    <div class="col-lg-2">
+                        <div class="form-check">
+                            <input asp-for="Hours[i].IsClosed" class="form-check-input closed-toggle" />
+                            <label asp-for="Hours[i].IsClosed" class="form-check-label">Closed</label>
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <label asp-for="Hours[i].OpeningTime" class="form-label">Opening</label>
+                        <input asp-for="Hours[i].OpeningTime" asp-format="{0:HH:mm}" type="time" step="60" class="form-control" />
+                    </div>
+                    <div class="col-lg-3">
+                        <label asp-for="Hours[i].ClosingTime" class="form-label">Closing</label>
+                        <input asp-for="Hours[i].ClosingTime" asp-format="{0:HH:mm}" type="time" step="60" class="form-control" />
+                    </div>
+                </div>
+            }
+            <button type="submit" class="btn btn-primary-custom mt-4">Update Hours</button>
+        </form>
     </div>
 
-    <!-- 3. Dining Areas Tab -->
-    <div class="tab-pane fade" id="areas" role="tabpanel">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="tab-pane fade @(Model.ActiveTab == "areas" ? "show active" : "")" id="areas" role="tabpanel" aria-labelledby="areas-tab">
+        <div class="d-flex justify-content-between align-items-center mb-4 gap-2">
             <h4 class="text-dark fw-bold mb-0">Dining Areas</h4>
-            <button class="btn btn-sm btn-outline-dark"><i class="bi bi-plus-lg"></i> Add New Area</button>
+            <a asp-page="/Admin/Tables" class="btn btn-sm btn-outline-dark"><i class="bi bi-pencil-square"></i> Manage Areas &amp; Tables</a>
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Area Name</th>
-                        <th>Capacity</th>
-                        <th>Total Tables</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
+                <thead class="table-light"><tr><th>Area Name</th><th>Total Seats</th><th>Total Tables</th></tr></thead>
                 <tbody>
-                    <tr>
-                        <td>Main Dining Room</td>
-                        <td>80 pax</td>
-                        <td>20</td>
-                        <td><button class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></button></td>
-                    </tr>
+                @foreach (var area in Model.DiningAreas)
+                {
+                    <tr><td>@area.Name</td><td>@area.Capacity pax</td><td>@area.TotalTables</td></tr>
+                }
+                @if (Model.DiningAreas.Count == 0)
+                {
+                    <tr><td colspan="3" class="text-muted">No dining areas added yet.</td></tr>
+                }
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- 4. Menu Categories Tab -->
-    <div class="tab-pane fade" id="categories" role="tabpanel">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="tab-pane fade @(Model.ActiveTab == "categories" ? "show active" : "")" id="categories" role="tabpanel" aria-labelledby="categories-tab">
+        <div class="d-flex justify-content-between align-items-center mb-4 gap-2">
             <h4 class="text-dark fw-bold mb-0">Menu Categories</h4>
-            <button class="btn btn-sm btn-outline-dark"><i class="bi bi-plus-lg"></i> Add Category</button>
+            <a asp-page="/Admin/Menu" class="btn btn-sm btn-outline-dark"><i class="bi bi-pencil-square"></i> Manage Categories</a>
         </div>
         <div class="d-flex flex-wrap gap-2">
-            <span class="badge bg-secondary p-2 fs-6">Appetizers</span>
-            <span class="badge bg-secondary p-2 fs-6">Main Course</span>
-            <span class="badge bg-secondary p-2 fs-6">Desserts</span>
+            @foreach (var category in Model.Categories)
+            {
+                <span class="badge bg-secondary p-2 fs-6">@category.Name (@category.ItemCount)</span>
+            }
+            @if (Model.Categories.Count == 0)
+            {
+                <p class="text-muted">No menu categories added yet.</p>
+            }
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/jquery.validate.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
+    <partial name="_ValidationScriptsPartial" />
 }

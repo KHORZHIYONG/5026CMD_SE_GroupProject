@@ -1,4 +1,4 @@
-﻿@page "/Admin/Menu"
+@page "/Admin/Menu"
 @model ResROMS.Pages.Admin.MenuModel
 @{
     ViewData["Title"] = "Menu & Pricing";
@@ -126,6 +126,13 @@
     </div>
 </div>
 
+@if (TempData["ErrorMessage"] is string menuError)
+{
+    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @menuError
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
 @if (TempData["SuccessMessage"] != null)
 {
     <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
