@@ -1,0 +1,277 @@
+﻿@page "/Staff/Customers"
+@model ResROMS.Pages.Staff.CustomersModel
+@{
+    ViewData["Title"] = "Customers";
+}
+
+@section Styles {
+    <style>
+        .page-header {
+            margin-bottom: 25px;
+        }
+
+        .cust-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .cust-item {
+            display: block;
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.15s;
+        }
+
+            .cust-item:hover {
+                border-color: #e85d04;
+            }
+
+            .cust-item.active {
+                border-color: #e85d04;
+                background: #fff7ed;
+            }
+
+        .cust-name {
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .detail-card {
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            text-align: center;
+            padding: 12px;
+            border-radius: 10px;
+            background: #f7fafc;
+        }
+
+            .stat-box .num {
+                font-size: 1.6rem;
+                font-weight: 700;
+                color: #e85d04;
+            }
+
+        .request-item {
+            background: #fff7ed;
+            border-left: 4px solid #e85d04;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+        }
+
+        .status-pill {
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-Pending {
+            background: #fefcbf;
+            color: #744210;
+        }
+
+        .status-Confirmed {
+            background: #bee3f8;
+            color: #2a4365;
+        }
+
+        .status-Completed {
+            background: #c6f6d5;
+            color: #276749;
+        }
+
+        .status-Cancelled {
+            background: #fed7d7;
+            color: #9b2c2c;
+        }
+
+        .btn-primary-custom {
+            background-color: #e85d04;
+            border: none;
+            font-weight: 600;
+            border-radius: 8px;
+            color: white;
+        }
+
+            .btn-primary-custom:hover {
+                background-color: #dc2f02;
+                color: white;
+            }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #a0aec0;
+        }
+    </style>
+}
+
+<div class="page-header">
+    <h1 class="page-title">Customers</h1>
+    <p class="text-muted small mb-0">Look up a customer account to see their reservation and order history.</p>
+</div>
+
+<div class="row">
+    <!-- LEFT: search and customer list -->
+    <div class="col-md-4">
+        <form method="get" class="d-flex gap-2 mb-3">
+            <input type="text" name="Q" value="@Model.Q" class="form-control" placeholder="Search name, email or phone" />
+            <button type="submit" class="btn btn-primary-custom"><i class="bi bi-search"></i></button>
+        </form>
+
+        <h6 class="fw-bold text-muted mb-3">CUSTOMERS (@Model.Customers.Count)</h6>
+        <ul class="cust-list">
+            @foreach (var c in Model.Customers)
+            {
+                <li>
+                    <a href="/Staff/Customers?Id=@c.Id&Q=@Uri.EscapeDataString(Model.Q ?? "")"
+                       class="cust-item @(Model.Selected?.Id == c.Id ? "active" : "")">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="cust-name">@c.Name</span>
+                            @if (!c.IsActive)
+                            {
+                                <span class="badge bg-secondary">Inactive</span>
+                            }
+                        </div>
+                        <div class="small text-muted">@(string.IsNullOrWhiteSpace(c.Phone) ? c.Email : c.Phone) &middot; @c.TotalReservations reservation(s)</div>
+                    </a>
+                </li>
+            }
+            @if (!Model.Customers.Any())
+            {
+                <li class="text-muted small">No customer accounts found.</li>
+            }
+        </ul>
+    </div>
+
+    <!-- RIGHT: selected customer -->
+    <div class="col-md-8">
+        @if (Model.Selected == null)
+        {
+            <div class="detail-card empty-state">
+                <i class="bi bi-people" style="font-size: 2.5rem;"></i>
+                <p class="mt-3 mb-0">Select a customer on the left to see their history.</p>
+            </div>
+        }
+        else
+        {
+            var c = Model.Selected;
+            var requests = Model.Reservations.Where(r => !string.IsNullOrWhiteSpace(r.Requests)).ToList();
+
+            <div class="detail-card">
+                <h4 class="fw-bold mb-1">@c.Name</h4>
+                <div class="text-muted small mb-3">
+                    @if (!string.IsNullOrWhiteSpace(c.Phone))
+                    {
+                        <span class="me-3"><i class="bi bi-telephone me-1"></i>@c.Phone</span>
+                    }
+                    <span><i class="bi bi-envelope me-1"></i>@c.Email</span>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-6 col-md-3"><div class="stat-box"><div class="num">@c.TotalReservations</div><div class="small text-muted">Reservations</div></div></div>
+                    <div class="col-6 col-md-3"><div class="stat-box"><div class="num">@c.Completed</div><div class="small text-muted">Completed visits</div></div></div>
+                    <div class="col-6 col-md-3"><div class="stat-box"><div class="num">@c.TotalOrders</div><div class="small text-muted">Orders</div></div></div>
+                    <div class="col-6 col-md-3"><div class="stat-box"><div class="num">RM @c.TotalSpent.ToString("F0")</div><div class="small text-muted">Paid in total</div></div></div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h6 class="fw-bold text-muted mb-3">SPECIAL REQUESTS AND DINING PREFERENCES</h6>
+                @if (requests.Any())
+                {
+                    @foreach (var r in requests)
+                    {
+                        <div class="request-item">
+                            <div>@r.Requests</div>
+                            <div class="small text-muted">From the @r.StartLocal.ToString("dd MMM yyyy") reservation</div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted small mb-0">This customer has not made any special requests.</p>
+                }
+            </div>
+
+            <div class="detail-card">
+                <h6 class="fw-bold text-muted mb-3">RESERVATION HISTORY</h6>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Guests</th>
+                                <th>Table</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model.Reservations)
+                            {
+                                <tr>
+                                    <td>@r.StartLocal.ToString("dd MMM yyyy")</td>
+                                    <td>@r.StartLocal.ToString("HH:mm")</td>
+                                    <td>@r.PartySize</td>
+                                    <td>@r.Table</td>
+                                    <td><span class="status-pill status-@r.Status">@r.Status</span></td>
+                                </tr>
+                            }
+                            @if (!Model.Reservations.Any())
+                            {
+                                <tr><td colspan="5" class="text-muted text-center">No reservations yet.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h6 class="fw-bold text-muted mb-3">ORDER HISTORY</h6>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Total</th>
+                                <th>Payment</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var o in Model.Orders)
+                            {
+                                <tr>
+                                    <td>#@o.Id</td>
+                                    <td>@o.OrderedLocal.ToString("dd MMM yyyy, HH:mm")</td>
+                                    <td>@o.Status</td>
+                                    <td>RM @o.Total.ToString("F2")</td>
+                                    <td>@o.PaymentStatus</td>
+                                </tr>
+                            }
+                            @if (!Model.Orders.Any())
+                            {
+                                <tr><td colspan="5" class="text-muted text-center">No orders linked to this customer.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+</div>

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using ResROMS.Data;
 using ResROMS.Models;
 using System.ComponentModel.DataAnnotations;
@@ -41,6 +42,7 @@ public class LoginModel : PageModel
         {
             if (User.IsInRole("Admin")) return RedirectToPage("/Admin/Dashboard");
             if (User.IsInRole("Customer")) return RedirectToPage("/Customer/Reservations");
+            if (User.IsInRole("Waiter") || User.IsInRole("Kitchen Staff")) return RedirectToPage("/Staff/Orders");  //if staff already logged in, go straight to orders page
         }
         return Page();
     }
@@ -96,6 +98,7 @@ public class LoginModel : PageModel
         {
             "Admin" => RedirectToPage("/Admin/Dashboard"),
             "Customer" => RedirectToPage("/Customer/Reservations"),
+            "Waiter" or "Kitchen Staff" => RedirectToPage("/Staff/Orders"),  //after login, staff goes to orders page
             _ => RedirectToPage("/AccessDenied")
         };
     }

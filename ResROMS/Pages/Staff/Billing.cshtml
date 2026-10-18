@@ -1,0 +1,255 @@
+﻿@page "/Staff/Billing"
+@model ResROMS.Pages.Staff.BillingModel
+@{
+    ViewData["Title"] = "Billing";
+}
+
+@section Styles {
+    <style>
+        .page-header {
+            margin-bottom: 25px;
+        }
+
+        .bill-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .bill-list-item {
+            display: block;
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.15s;
+        }
+
+            .bill-list-item:hover {
+                border-color: #e85d04;
+            }
+
+            .bill-list-item.active {
+                border-color: #e85d04;
+                background: #fff7ed;
+            }
+
+        .bill-list-table {
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .bill-list-amount {
+            font-weight: 700;
+            color: #e85d04;
+        }
+
+        .detail-card {
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            padding: 25px;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+
+            .item-row:last-child {
+                border-bottom: none;
+            }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.2rem;
+            font-weight: 700;
+            padding-top: 12px;
+            margin-top: 8px;
+            border-top: 2px solid #2d3748;
+        }
+
+        .btn-primary-custom {
+            background-color: #e85d04;
+            border: none;
+            font-weight: 600;
+            border-radius: 8px;
+            color: white;
+        }
+
+            .btn-primary-custom:hover {
+                background-color: #dc2f02;
+                color: white;
+            }
+
+        .paid-badge {
+            background: #c6f6d5;
+            color: #276749;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .refunded-badge {
+            background: #fed7d7;
+            color: #9b2c2c;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #a0aec0;
+        }
+    </style>
+}
+
+<div class="page-header">
+    <h1 class="page-title">Billing</h1>
+    <p class="text-muted small mb-0">Record payments for orders that are ready or finished.</p>
+</div>
+
+@if (TempData["SuccessMessage"] is string success)
+{
+    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @success
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] is string error)
+{
+    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+        <i class="bi bi-exclamation-circle-fill me-2"></i> @error
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row">
+    <!-- LEFT: list of orders awaiting payment -->
+    <div class="col-md-4">
+        <h6 class="fw-bold text-muted mb-3">AWAITING PAYMENT (@Model.UnpaidOrders.Count)</h6>
+        <ul class="bill-list">
+            @foreach (var order in Model.UnpaidOrders)
+            {
+                <li>
+                    <a href="/Staff/Billing?orderId=@order.Id"
+                       class="bill-list-item @(Model.SelectedOrder?.Id == order.Id ? "active" : "")">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="bill-list-table">@order.TableLabel <span class="text-muted small">#@order.Id</span></span>
+                            <span class="bill-list-amount">RM @order.TotalAmount.ToString("F2")</span>
+                        </div>
+                        <div class="small text-muted">@order.Lines.Count item(s) &middot; @order.Status</div>
+                    </a>
+                </li>
+            }
+            @if (!Model.UnpaidOrders.Any())
+            {
+                <li class="text-muted small">No orders waiting on payment right now.</li>
+            }
+        </ul>
+    </div>
+
+    <!-- RIGHT: selected order detail + payment form -->
+    <div class="col-md-8">
+        @if (Model.SelectedOrder == null)
+        {
+            <div class="detail-card empty-state">
+                <i class="bi bi-receipt" style="font-size: 2.5rem;"></i>
+                <p class="mt-3 mb-0">Select an order on the left to view its bill.</p>
+            </div>
+        }
+        else
+        {
+            var order = Model.SelectedOrder;
+            var payment = Model.ExistingPayment;
+
+            <div class="detail-card">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h4 class="fw-bold mb-1">@order.TableLabel &middot; Order #@order.Id</h4>
+                        <div class="text-muted small">Entered by @order.EnteredBy &middot; @order.OrderedLocal.ToString("dd MMM, h:mm tt") &middot; @order.CustomerName</div>
+                    </div>
+                    @if (payment != null && payment.Status == "Paid")
+                    {
+                        <span class="paid-badge"><i class="bi bi-check-circle-fill me-1"></i>Paid</span>
+                    }
+                    else if (payment != null && payment.Status == "Refunded")
+                    {
+                        <span class="refunded-badge"><i class="bi bi-arrow-counterclockwise me-1"></i>Refunded</span>
+                    }
+                </div>
+
+                <div class="mb-3">
+                    @foreach (var line in order.Lines)
+                    {
+                        <div class="item-row">
+                            <span>@line.Quantity x @line.Name</span>
+                            <span>RM @line.Total.ToString("F2")</span>
+                        </div>
+                    }
+                </div>
+
+                <div class="total-row">
+                    <span>Total</span>
+                    <span>RM @order.TotalAmount.ToString("F2")</span>
+                </div>
+
+                @if (payment == null && order.Status != "Cancelled")
+                {
+                    <form asp-page-handler="RecordPayment" method="post" class="mt-4 row g-2 align-items-end">
+                        <input type="hidden" name="orderId" value="@order.Id" />
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small">Payment Method</label>
+                            <select name="method" class="form-select">
+                                <option value="Cash">Cash</option>
+                                <option value="Card">Card</option>
+                                <option value="BankTransfer">Bank Transfer</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-bold small">Reference (optional)</label>
+                            <input type="text" name="reference" class="form-control" maxlength="60" />
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary-custom w-100">
+                                <i class="bi bi-cash-coin me-1"></i> Record
+                            </button>
+                        </div>
+                    </form>
+                }
+                else if (payment != null)
+                {
+                    <div class="mt-4 d-flex justify-content-between align-items-center">
+                        <div class="small text-muted">
+                            @payment.Status via <strong>@payment.Method</strong> on @payment.RecordedLocal.ToString("dd MMM yyyy, h:mm tt")
+                            @if (!string.IsNullOrWhiteSpace(payment.Reference))
+                            {
+                                <span>&middot; @payment.Reference</span>
+                            }
+                        </div>
+                        @if (payment.Status == "Paid")
+                        {
+                            <form asp-page-handler="MarkRefunded" method="post">
+                                <input type="hidden" name="paymentId" value="@payment.Id" />
+                                <input type="hidden" name="orderId" value="@order.Id" />
+                                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Mark this payment as refunded?');">
+                                    Mark Refunded
+                                </button>
+                            </form>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

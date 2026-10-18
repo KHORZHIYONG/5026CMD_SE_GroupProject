@@ -1,0 +1,62 @@
+﻿@page "/Staff/Profile"
+@model ResROMS.Pages.Staff.ProfileModel
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<h1 class="page-title mb-4">My Profile</h1>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card border-0 shadow-sm rounded-4" style="max-width: 600px;">
+    <div class="card-body p-4">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            @if (Model.CurrentUser != null)
+            {
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Role</label>
+                    <input class="form-control" value="@Model.CurrentUser.Role" disabled />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Joined</label>
+                    <input class="form-control" value="@Model.CurrentUser.DateJoined.ToString("MMM dd, yyyy")" disabled />
+                </div>
+            }
+
+            <div class="mb-3">
+                <label asp-for="Input.FullName" class="form-label fw-bold"></label>
+                <input asp-for="Input.FullName" class="form-control" />
+                <span asp-validation-for="Input.FullName" class="text-danger small"></span>
+            </div>
+
+            @if (Model.CurrentUser != null)
+            {
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Email (login)</label>
+                    <input class="form-control" value="@Model.CurrentUser.Email" disabled />
+                    <div class="form-text">Ask an Administrator if your email needs to change.</div>
+                </div>
+            }
+
+            <div class="mb-3">
+                <label asp-for="Input.Phone" class="form-label fw-bold"></label>
+                <input asp-for="Input.Phone" class="form-control" />
+                <span asp-validation-for="Input.Phone" class="text-danger small"></span>
+            </div>
+
+            <button type="submit" class="btn btn-dark mt-2">Save Changes</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

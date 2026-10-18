@@ -16,7 +16,9 @@ public class IndexModel : PageModel
         if (User.IsInRole("Customer"))
             return RedirectToPage("/Customer/Reservations");
 
-        // Staff module is not implemented yet; don't show the ASP.NET demo page.
+        if (User.IsInRole("Waiter") || User.IsInRole("Kitchen Staff"))  //staff - waiter and kitchen staff go to /Staff/Orders
+            return RedirectToPage("/Staff/Orders");
+
         return RedirectToPage("/AccessDenied");
     }
 }
