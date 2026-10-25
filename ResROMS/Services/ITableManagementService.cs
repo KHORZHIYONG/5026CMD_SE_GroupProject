@@ -12,6 +12,8 @@ public interface ITableManagementService
     Task<OperationResult> RenameAreaAsync(int id, string name);
     Task<OperationResult> DeleteAreaAsync(int id);
     Task<OperationResult> AddTableAsync(string tableNumber, int capacity, int diningAreaId, string shape);
+    Task<OperationResult> AddTablesBatchAsync(string prefix, int startNumber, int count,
+        int capacity, int diningAreaId, string shape);
     Task<OperationResult> EditTableAsync(int id, string tableNumber, int capacity, int diningAreaId, string shape);
     Task<OperationResult> ChangeStatusAsync(int id, string status);
     Task<OperationResult> DeleteTableAsync(int id);

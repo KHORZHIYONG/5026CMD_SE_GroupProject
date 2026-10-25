@@ -27,6 +27,10 @@ public static class DbInitializer
                 );
         }
 
+        // Add a Desserts category to existing installations too, without inserting fake dishes.
+        if (!context.Categories.Any(c => c.Name == "Desserts"))
+            context.Categories.Add(new Category { Name = "Desserts" });
+
         if (!context.RestaurantProfiles.Any())
         {
             context.RestaurantProfiles.Add(new RestaurantProfile

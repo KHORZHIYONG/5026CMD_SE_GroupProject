@@ -7,7 +7,7 @@ public sealed record OrderLineSummary(string Name, int Quantity, decimal UnitPri
 public sealed record OrderSummary(int Id, string TableLabel, string CustomerName,
     string EnteredBy, string Status, DateTime OrderedLocal, decimal Subtotal,
     decimal TotalAmount, string PaymentStatus, IReadOnlyList<OrderLineSummary> Lines);
-public sealed record MenuChoice(int Id, string Name, decimal Price);
+public sealed record MenuChoice(int Id, string Name, decimal Price, string CategoryName);
 public sealed record AccountChoice(int Id, string Name);
 public sealed record TableChoice(int Id, string Label);
 public sealed record OrderOption(int Id, string Label);

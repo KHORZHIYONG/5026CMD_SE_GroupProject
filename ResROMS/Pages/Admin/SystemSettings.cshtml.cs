@@ -19,6 +19,9 @@ public sealed class SystemSettingsModel : PageModel
         public int MinimumBookingNoticeMinutes { get; set; } = 15;
         [Range(1, 365, ErrorMessage = "Choose 1–365 days.")]
         public int MaximumBookingAdvanceDays { get; set; } = 90;
+        [Range(1, 16)] public int MaximumShiftHours { get; set; } = 12;
+        [Range(8, 80)] public int MaximumWeeklyHours { get; set; } = 60;
+        [Range(0, 24)] public int MinimumRestHours { get; set; } = 8;
     }
 
     [BindProperty]
@@ -31,7 +34,10 @@ public sealed class SystemSettingsModel : PageModel
         {
             CustomerBookingsEnabled = value.CustomerBookingsEnabled,
             MinimumBookingNoticeMinutes = value.MinimumBookingNoticeMinutes,
-            MaximumBookingAdvanceDays = value.MaximumBookingAdvanceDays
+            MaximumBookingAdvanceDays = value.MaximumBookingAdvanceDays,
+            MaximumShiftHours = value.MaximumShiftHours,
+            MaximumWeeklyHours = value.MaximumWeeklyHours,
+            MinimumRestHours = value.MinimumRestHours
         };
     }
 
@@ -40,7 +46,8 @@ public sealed class SystemSettingsModel : PageModel
         if (!ModelState.IsValid) return Page();
         var result = await _settings.SaveAsync(new SystemSettingsInput(
             Form.CustomerBookingsEnabled, Form.MinimumBookingNoticeMinutes,
-            Form.MaximumBookingAdvanceDays));
+            Form.MaximumBookingAdvanceDays, Form.MaximumShiftHours,
+            Form.MaximumWeeklyHours, Form.MinimumRestHours));
         if (!result.Success)
         {
             ModelState.AddModelError(string.Empty, result.Message);

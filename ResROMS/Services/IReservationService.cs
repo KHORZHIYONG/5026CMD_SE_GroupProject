@@ -9,10 +9,14 @@ public sealed record ReservationSummary(int Id, int CustomerId, string CustomerN
 public sealed record ReservationCustomerOption(int Id, string Name, string Email);
 public sealed record ReservationTableOption(int Id, string TableNumber, int Capacity, string AreaName, string Status);
 
+public sealed record TableAvailabilityResult(string? Error, IReadOnlyList<ReservationTableOption> Tables);
+
 public interface IReservationService
 {
     Task<IReadOnlyList<ReservationCustomerOption>> GetCustomersAsync();
     Task<IReadOnlyList<ReservationTableOption>> GetTablesAsync();
+    Task<TableAvailabilityResult> CheckAvailabilityAsync(DateTime startLocal, int durationMinutes,
+        int partySize, bool forCustomer = false);
     Task<IReadOnlyList<ReservationTableOption>> FindAvailableTablesAsync(DateTime startLocal,
         int durationMinutes, int partySize, bool forCustomer = false);
     Task<IReadOnlyList<ReservationSummary>> GetForAdminAsync(DateTime? dateLocal);

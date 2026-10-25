@@ -19,8 +19,18 @@ public sealed class CampaignsModel : PageModel
 
     public async Task OnGetAsync() => Campaigns = await _service.GetAllAsync();
 
-    public async Task<IActionResult> OnPostCreateAsync() =>
-        RedirectWithResult(await _service.CreateAsync(Form));
+    public async Task<IActionResult> OnPostCreateAsync()
+    {
+        if (ModelState.IsValid)
+        {
+            var result = await _service.CreateAsync(Form);
+            if (result.Success) return RedirectWithResult(result);
+            ModelState.AddModelError("Form.PromoCode", result.Message);
+        }
+        Campaigns = await _service.GetAllAsync();
+        ViewData["ReopenCreateModal"] = true;
+        return Page();  // Preserve the posted form and validation errors.
+    }
 
     public async Task<IActionResult> OnPostEditAsync() =>
         RedirectWithResult(await _service.EditAsync(CampaignId, Form));

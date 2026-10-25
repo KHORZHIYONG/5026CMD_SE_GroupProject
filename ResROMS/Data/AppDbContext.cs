@@ -21,6 +21,7 @@ namespace ResROMS.Data
         public DbSet<Payment> Payments { get; set; }
         public DbSet<SystemSetting> SystemSettings { get; set; }
         public DbSet<Announcement> Announcements { get; set; }
+        public DbSet<StaffShift> StaffShifts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -182,6 +183,9 @@ namespace ResROMS.Data
                 setting.Property(s => s.CustomerBookingsEnabled).HasDefaultValue(true);
                 setting.Property(s => s.MinimumBookingNoticeMinutes).HasDefaultValue(15);
                 setting.Property(s => s.MaximumBookingAdvanceDays).HasDefaultValue(90);
+                setting.Property(s => s.MaximumShiftHours).HasDefaultValue(12);
+                setting.Property(s => s.MaximumWeeklyHours).HasDefaultValue(60);
+                setting.Property(s => s.MinimumRestHours).HasDefaultValue(8);
                 setting.ToTable(table =>
                 {
                     table.HasCheckConstraint("CK_SystemSettings_Singleton", "[Id] = 1");
@@ -189,6 +193,12 @@ namespace ResROMS.Data
                         "[MinimumBookingNoticeMinutes] BETWEEN 0 AND 1440");
                     table.HasCheckConstraint("CK_SystemSettings_MaxAdvance",
                         "[MaximumBookingAdvanceDays] BETWEEN 1 AND 365");
+                    table.HasCheckConstraint("CK_SystemSettings_ShiftMax",
+                        "[MaximumShiftHours] BETWEEN 1 AND 16");
+                    table.HasCheckConstraint("CK_SystemSettings_WeeklyMax",
+                        "[MaximumWeeklyHours] BETWEEN 8 AND 80");
+                    table.HasCheckConstraint("CK_SystemSettings_RestMin",
+                        "[MinimumRestHours] BETWEEN 0 AND 24");
                 });
             });
 
@@ -207,6 +217,18 @@ namespace ResROMS.Data
                         "[Audience] IN ('All','Customer','Staff')");
                     table.HasCheckConstraint("CK_Announcements_DateRange",
                         "[EndsUtc] IS NULL OR [EndsUtc] > [StartsUtc]");
+                });
+            });
+
+            modelBuilder.Entity<StaffShift>(shift =>
+            {
+                shift.HasOne(s => s.StaffUser).WithMany()
+                    .HasForeignKey(s => s.StaffUserId).OnDelete(DeleteBehavior.Restrict);
+                shift.Property(s => s.Notes).HasMaxLength(300);
+                shift.HasIndex(s => new { s.StaffUserId, s.StartLocal, s.EndLocal });
+                shift.ToTable(table =>
+                {
+                    table.HasCheckConstraint("CK_StaffShifts_Interval", "[EndLocal] > [StartLocal]");
                 });
             });
 

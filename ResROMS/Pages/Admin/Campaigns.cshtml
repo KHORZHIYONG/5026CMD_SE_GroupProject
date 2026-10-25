@@ -200,6 +200,7 @@ else
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form asp-page-handler="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger small px-3 pt-2"></div>
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-8">
@@ -218,6 +219,7 @@ else
                             <label asp-for="Form.PromoCode" class="form-label fw-bold">Promotion code (optional)</label>
                             <input asp-for="Form.PromoCode" class="form-control" maxlength="24" placeholder="e.g. WEEKEND20" />
                             <small class="text-muted">Codes are case-insensitive and must be unique. Leave blank for no-code campaigns.</small>
+                            <span asp-validation-for="Form.PromoCode" class="text-danger small d-block"></span>
                         </div>
                         <div class="col-md-6">
                             <label asp-for="Form.DiscountType" class="form-label fw-bold">Discount Type</label>
@@ -254,3 +256,13 @@ else
         </div>
     </div>
 </div>
+
+@if (ViewData["ReopenCreateModal"] is true)
+{
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('addCampaignModal');
+            if (modal && window.bootstrap) bootstrap.Modal.getOrCreateInstance(modal).show();
+        });
+    </script>
+}

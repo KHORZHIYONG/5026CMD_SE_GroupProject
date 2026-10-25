@@ -200,25 +200,53 @@
 </div>
 @section Scripts {
     <script>
-        document.getElementById('checkAvailability')?.addEventListener('click', async () => {
-            const date = document.getElementById('NewBooking_StartLocal').value;
-            const duration = document.getElementById('NewBooking_DurationMinutes').value;
-            const partySize = document.getElementById('NewBooking_PartySize').value;
+        (() => {
+            const date = document.getElementById('NewBooking_StartLocal');
+            const duration = document.getElementById('NewBooking_DurationMinutes');
+            const size = document.getElementById('NewBooking_PartySize');
             const select = document.getElementById('newTableSelect');
             const message = document.getElementById('availabilityMessage');
-            if (!date || !partySize) { message.textContent = 'Enter a date/time and number of guests first.'; return; }
-            message.textContent = 'Checking…';
-            try {
-                const params = new URLSearchParams({ handler: 'Availability', startLocal: date, durationMinutes: duration, partySize });
-                const response = await fetch('/Admin/Reservations?' + params, { credentials: 'same-origin' });
-                if (!response.ok) throw new Error('Availability request failed');
-                const tables = await response.json();
-                select.replaceChildren(new Option('Select a table', ''));
-                tables.forEach(t => select.add(new Option(t.label, t.id)));
-                message.textContent = tables.length ? `${tables.length} table(s) available for that time.` : 'No matching tables. Try a different time or party size.';
-            } catch {
-                message.textContent = 'Could not check availability. Please try again.';
+            const manual = document.getElementById('checkAvailability');
+            let requestNumber = 0;
+            let pending;
+            const update = async () => {
+                const seq = ++requestNumber;
+                if (!date.value || !size.value || Number(size.value) < 1) {
+                    message.textContent = 'Choose a date/time and number of guests.';
+                    return;
+                }
+                const selected = select.value;
+                message.textContent = 'Checking availability and restaurant hours…';
+                try {
+                    const params = new URLSearchParams({ handler:'Availability',
+                        startLocal: date.value, durationMinutes: duration.value, partySize: size.value });
+                    const response = await fetch('/Admin/Reservations?' + params, {credentials:'same-origin', cache:'no-store'});
+                    if (!response.ok) throw new Error('Availability request failed');
+                    const result = await response.json();
+                    if (seq !== requestNumber) return;
+                    select.replaceChildren(new Option('Select an available table', ''));
+                    (result.tables || []).forEach(t => select.add(new Option(t.label, String(t.id))));
+                    if (selected && (result.tables || []).some(t => String(t.id) === selected)) select.value = selected;
+                    if (result.error) {
+                        message.textContent = result.error;
+                        message.classList.add('text-danger');
+                    } else {
+                        message.textContent = result.tables.length ?
+                            `${result.tables.length} table(s) available for this complete booking.` :
+                            'No tables meet this time and party size. Try another time or smaller party.';
+                        message.classList.toggle('text-danger', !result.tables.length);
+                    }
+                } catch {
+                    if (seq !== requestNumber) return;
+                    message.textContent = 'Unable to check tables; please retry. Your booking will still be validated by the server.';
+                    message.classList.add('text-danger');
+                }
+            };
+            for (const input of [date, duration, size]) {
+                input?.addEventListener('change', () => {clearTimeout(pending); pending=setTimeout(update,220);});
             }
-        });
+            manual?.addEventListener('click', update);
+            if (date?.value && size?.value) update();
+        })();
     </script>
 }

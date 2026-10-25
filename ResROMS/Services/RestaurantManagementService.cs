@@ -91,6 +91,18 @@ public sealed class RestaurantManagementService : IRestaurantManagementService
                     return Fail($"Reservation #{booking.Id} ({start:dd MMM yyyy HH:mm}) would be outside the new opening hours. Move or cancel it first.");
             }
 
+            // Opening-hours changes must not strand existing future staff shifts.
+            var localNow = ReservationClock.ToLocal(DateTime.UtcNow);
+            var futureShifts = await _db.StaffShifts.AsNoTracking()
+                .Where(s => s.EndLocal > localNow)
+                .OrderBy(s => s.StartLocal)
+                .Select(s => new { s.Id, s.StartLocal, s.EndLocal }).ToListAsync();
+            foreach (var shift in futureShifts)
+            {
+                if (!OpeningHoursPolicy.IsWithinHours(shift.StartLocal, shift.EndLocal, schedule))
+                    return Fail($"Shift #{shift.Id} ({shift.StartLocal:dd MMM yyyy HH:mm}) would be outside the new hours. Move or remove it first.");
+            }
+
             var existing = await _db.OperatingHours.ToDictionaryAsync(h => h.DayOfWeek);
             foreach (var selected in schedule)
             {
