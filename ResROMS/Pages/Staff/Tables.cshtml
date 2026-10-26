@@ -1,0 +1,228 @@
+@page "/Staff/Tables"
+@model ResROMS.Pages.Staff.TablesModel
+@{
+    ViewData["Title"] = "Tables";
+}
+
+@section Styles {
+    <style>
+        .floor { display: flex; gap: 24px; align-items: flex-start; }
+        .floor-left { flex: 1; min-width: 0; }
+        .area-title { font-weight: 700; color: #2d3748; margin: 18px 0 10px; }
+        .table-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+        .tbl {
+            border: 3px solid transparent; border-radius: 14px; padding: 14px; text-align: left;
+            background: #fff; cursor: pointer; min-height: 96px; box-shadow: 0 1px 3px rgba(0,0,0,.08);
+        }
+        .tbl .num { font-size: 1.3rem; font-weight: 700; }
+        .tbl .meta { font-size: .85rem; color: #4a5568; }
+        .tbl.Available { border-color: #38a169; background: #f0fff4; }
+        .tbl.Occupied { border-color: #dd6b20; background: #fffaf0; }
+        .tbl.Reserved { border-color: #3182ce; background: #ebf8ff; }
+        .tbl.Maintenance { border-color: #a0aec0; background: #edf2f7; cursor: not-allowed; }
+        .tbl.selected { box-shadow: 0 0 0 4px rgba(232,93,4,.35); }
+        .side-panel { width: 340px; background: #fff; border-radius: 14px; padding: 20px; position: sticky; top: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+        .legend span { margin-right: 16px; font-size: .9rem; }
+        .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; }
+        .rsv-card { border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 10px; padding: 10px; margin-bottom: 8px; }
+        .step-btn { width: 48px; height: 48px; font-size: 1.4rem; }
+    </style>
+}
+
+<div class="mb-3">
+    <h1 class="page-title">Tables</h1>
+    <div class="legend mt-2">
+        <span><i class="dot" style="background:#38a169"></i>Available</span>
+        <span><i class="dot" style="background:#dd6b20"></i>Occupied</span>
+        <span><i class="dot" style="background:#3182ce"></i>Reserved</span>
+        <span><i class="dot" style="background:#a0aec0"></i>Maintenance</span>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] is string success)
+{
+    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-3" role="alert">
+        @success
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] is string error)
+{
+    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-3" role="alert">
+        @error
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="floor">
+    <div class="floor-left">
+        @foreach (var area in Model.Areas)
+        {
+            var inArea = Model.Tables.Where(t => t.DiningAreaId == area.Id).OrderBy(t => t.TableNumber).ToList();
+            if (inArea.Count == 0) { continue; }
+            <div class="area-title">@area.Name</div>
+            <div class="table-grid">
+                @foreach (var t in inArea)
+                {
+                    Model.ActiveByTable.TryGetValue(t.TableNumber, out var active);
+                    <button type="button" class="tbl @t.Status" disabled="@(t.Status == "Maintenance")"
+                            data-id="@t.Id" data-number="@t.TableNumber" data-capacity="@t.Capacity"
+                            data-status="@t.Status"
+                            data-order-id="@(active?.Id.ToString() ?? "")"
+                            data-order-status="@(active?.Status ?? "")"
+                            data-order-total="@(active is null ? "" : active.TotalAmount.ToString("F2"))">
+                        <div class="num">@t.TableNumber</div>
+                        <div class="meta">@t.Capacity seats</div>
+                        <div class="meta fw-semibold">@t.Status</div>
+                    </button>
+                }
+            </div>
+        }
+        @if (!Model.Tables.Any())
+        {
+            <div class="text-muted">No tables yet. An administrator adds tables first.</div>
+        }
+    </div>
+
+    @* Hidden list of bookings per table. The panel copies the right one when a table is tapped. *@
+    <div id="rsvStore" hidden>
+        @foreach (var kv in Model.ReservationsByTable)
+        {
+            <div data-table-id="@kv.Key">
+                @foreach (var b in kv.Value)
+                {
+                    <div class="rsv-card">
+                        <div class="fw-bold">@b.CustomerName, @b.PartySize guests</div>
+                        <div class="small">@b.StartLocal.ToString("ddd d MMM, h:mm tt") to @b.EndLocal.ToString("h:mm tt") (@b.Status)</div>
+                        @if (!string.IsNullOrWhiteSpace(b.SpecialRequests))
+                        {
+                            <div class="small text-muted">@b.SpecialRequests</div>
+                        }
+                        <form method="post" asp-page-handler="Reserve" class="mt-2 rsv-mark">
+                            <input type="hidden" name="tableId" value="@kv.Key" />
+                            <input type="hidden" name="reservationId" value="@b.Id" />
+                            <button type="submit" class="btn btn-sm w-100 text-white" style="background:#3182ce">Mark table as reserved</button>
+                        </form>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <aside class="side-panel" id="panel" aria-live="polite">
+        <div class="text-muted" id="panelEmpty">Tap a table to see its details.</div>
+
+        <div id="panelBody" style="display:none">
+            <h2 class="h4 fw-bold mb-1" id="pTitle"></h2>
+            <div class="text-muted mb-3" id="pSub"></div>
+
+            @* Free or reserved table: seat guests *@
+            <form method="post" asp-page-handler="Seat" id="seatForm">
+                <input type="hidden" name="tableId" id="seatTableId" />
+                <label class="form-label fw-semibold" for="guests">How many guests?</label>
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <button type="button" class="btn btn-outline-secondary step-btn" id="gMinus" aria-label="One fewer guest">-</button>
+                    <input type="number" name="guests" id="guests" class="form-control text-center fs-4" value="2" min="1" max="50" style="width:90px" />
+                    <button type="button" class="btn btn-outline-secondary step-btn" id="gPlus" aria-label="One more guest">+</button>
+                </div>
+                <button type="submit" name="next" value="order" class="btn btn-lg w-100 mb-2 text-white" style="background:#c2410c">Seat and take order now</button>
+                <button type="submit" name="next" value="later" class="btn btn-lg btn-outline-secondary w-100 mb-2">Seat, order later</button>
+                <button type="button" id="rsvBtn" class="btn btn-lg w-100" style="border:2px solid #3182ce;color:#2b6cb0">Add reservation</button>
+            </form>
+
+            @* Bookings from the Reservations page for this table *@
+            <div id="rsvBox" style="display:none" class="mt-3">
+                <div class="fw-semibold mb-2" id="rsvTitle">Reservations for this table</div>
+                <div id="rsvList"></div>
+                <a href="/Staff/Reservations" class="small">Make a new booking on the Reservations page</a>
+            </div>
+
+            @* Occupied table: status and next actions *@
+            <div id="occBox" style="display:none">
+                <div class="mb-3" id="occInfo"></div>
+                <a id="addLink" class="btn btn-lg w-100 mb-2 text-white" style="background:#c2410c" href="#">Take an order for this table</a>
+                <a class="btn btn-lg btn-outline-secondary w-100 mb-2" href="/Staff/Billing">Go to billing</a>
+                <form method="post" asp-page-handler="Free" onsubmit="return confirm('Guests have left and the bill is settled?');">
+                    <input type="hidden" name="tableId" id="freeTableId" />
+                    <button type="submit" class="btn btn-outline-success w-100">Mark table free</button>
+                </form>
+            </div>
+        </div>
+    </aside>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const panelEmpty = document.getElementById('panelEmpty');
+            const panelBody = document.getElementById('panelBody');
+            const seatForm = document.getElementById('seatForm');
+            const occBox = document.getElementById('occBox');
+            const guests = document.getElementById('guests');
+            const rsvBox = document.getElementById('rsvBox');
+            const rsvList = document.getElementById('rsvList');
+            const rsvBtn = document.getElementById('rsvBtn');
+            let currentTableId = null;
+            let currentStatus = '';
+
+            function showReservations() {
+                rsvList.innerHTML = '';
+                const store = document.querySelector('#rsvStore [data-table-id="' + currentTableId + '"]');
+                if (store) {
+                    Array.from(store.children).forEach(function (card) {
+                        const copy = card.cloneNode(true);
+                        // When the table is already Reserved there is nothing more to mark.
+                        if (currentStatus === 'Reserved') {
+                            const f = copy.querySelector('.rsv-mark');
+                            if (f) f.remove();
+                        }
+                        rsvList.appendChild(copy);
+                    });
+                } else {
+                    const none = document.createElement('div');
+                    none.className = 'text-muted small mb-2';
+                    none.textContent = 'No upcoming reservations for this table.';
+                    rsvList.appendChild(none);
+                }
+                rsvBox.style.display = 'block';
+            }
+            rsvBtn.onclick = showReservations;
+
+            document.getElementById('gMinus').onclick = function () { guests.value = Math.max(1, (parseInt(guests.value, 10) || 1) - 1); };
+            document.getElementById('gPlus').onclick = function () { guests.value = Math.min(50, (parseInt(guests.value, 10) || 1) + 1); };
+
+            document.querySelectorAll('.tbl').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    document.querySelectorAll('.tbl').forEach(function (b) { b.classList.remove('selected'); });
+                    btn.classList.add('selected');
+
+                    const d = btn.dataset;
+                    panelEmpty.style.display = 'none';
+                    panelBody.style.display = 'block';
+                    document.getElementById('pTitle').textContent = 'Table ' + d.number;
+                    document.getElementById('pSub').textContent = d.capacity + ' seats, ' + d.status;
+
+                    currentTableId = d.id;
+                    currentStatus = d.status;
+                    rsvBox.style.display = 'none';
+                    rsvBtn.style.display = d.status === 'Available' ? 'block' : 'none';
+                    if (d.status === 'Reserved') showReservations();
+                    const occupied = d.status === 'Occupied';
+                    seatForm.style.display = occupied ? 'none' : 'block';
+                    occBox.style.display = occupied ? 'block' : 'none';
+
+                    document.getElementById('seatTableId').value = d.id;
+                    document.getElementById('freeTableId').value = d.id;
+                    guests.value = Math.min(2, parseInt(d.capacity, 10) || 2);
+
+                    if (occupied) {
+                        document.getElementById('occInfo').textContent = d.orderId
+                            ? 'Order #' + d.orderId + ' is ' + d.orderStatus + '. Total so far: RM ' + d.orderTotal + '.'
+                            : 'No order yet for this table.';
+                        document.getElementById('addLink').href = '/Staff/TakeOrder?tableId=' + d.id + '&guests=1';
+                    }
+                });
+            });
+        })();
+    </script>
+}

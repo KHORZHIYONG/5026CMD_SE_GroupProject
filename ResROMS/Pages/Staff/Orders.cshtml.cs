@@ -34,15 +34,37 @@ public sealed class OrdersModel : PageModel
 
     [BindProperty] public NewOrderInput NewOrder { get; set; } = new();
 
-    public async Task OnGetAsync()
+    // Kitchen Staff go to their own simple board. They can still open this full page
+    // with the "All orders" button, which adds ?all=true.
+    public async Task<IActionResult> OnGetAsync(bool all = false)
     {
-        var all = await _orders.GetOrdersAsync();
+        if (!all && User.IsInRole("Kitchen Staff")) return RedirectToPage("/Staff/Kitchen");
+
+        var allOrders = await _orders.GetOrdersAsync();
         // Only orders that are still in progress belong on the board.
-        ActiveOrders = all.Where(o => o.Status is "New" or "Cooking" or "Ready").ToArray();
+        ActiveOrders = allOrders.Where(o => o.Status is "New" or "Cooking" or "Ready").ToArray();
         MenuChoices = await _orders.GetMenuChoicesAsync();
         CustomerChoices = await _orders.GetCustomerChoicesAsync();
         TableChoices = await _orders.GetTableChoicesAsync();
+        return Page();
     }
+
+
+
+
+    // Called by the notification bell every 10 seconds (see _StaffLayout.cshtml).
+    // It only counts orders and returns two numbers as JSON. Nothing is changed.
+    public async Task<IActionResult> OnGetCountsAsync()
+    {
+        var all = await _orders.GetOrdersAsync();
+        return new JsonResult(new
+        {
+            ready = all.Count(o => o.Status == "Ready"),
+            newOrders = all.Count(o => o.Status == "New")
+        });
+    }
+
+
 
     public async Task<IActionResult> OnPostCreateOrderAsync()
     {

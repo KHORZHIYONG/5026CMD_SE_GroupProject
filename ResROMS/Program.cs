@@ -95,11 +95,16 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy => policy.RequireAuthenticatedUser().RequireRole("Admin"));
     options.AddPolicy("CustomerOnly", policy => policy.RequireAuthenticatedUser().RequireRole("Customer"));
+    // Restaurant staff accounts (created by an Administrator under Accounts).
+    options.AddPolicy("StaffOnly", policy => policy.RequireAuthenticatedUser().RequireRole("Waiter", "Kitchen Staff"));  //waiter and kitchen count as staff
 });
+
 
 builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder("/Admin", "AdminOnly")
-        .AuthorizeFolder("/Customer", "CustomerOnly"));
+        .AuthorizeFolder("/Customer", "CustomerOnly")
+        .AuthorizeFolder("/Staff", "StaffOnly")); // staff
+
 
 var app = builder.Build();
 
@@ -143,7 +148,9 @@ app.Use(async (context, next) =>
                 ? "/Admin/Dashboard"
                 : context.User.IsInRole("Customer")
                     ? "/Customer/Reservations"
-                    : "/AccessDenied";
+                    : context.User.IsInRole("Waiter") || context.User.IsInRole("Kitchen Staff")
+                        ? "/Staff/Orders"   //staff
+                        : "/AccessDenied";
 
         context.Response.Redirect(target);
         return;
@@ -159,7 +166,8 @@ app.UseRateLimiter();
 app.Use(async (context, next) =>
 {
     if (context.Request.Path.StartsWithSegments("/Admin") ||
-        context.Request.Path.StartsWithSegments("/Customer"))
+        context.Request.Path.StartsWithSegments("/Customer") ||
+        context.Request.Path.StartsWithSegments("/Staff"))
     {
         context.Response.Headers.CacheControl = "no-store, no-cache, max-age=0";
         context.Response.Headers.Pragma = "no-cache";

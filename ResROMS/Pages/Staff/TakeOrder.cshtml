@@ -1,0 +1,305 @@
+@page "/Staff/TakeOrder"
+@model ResROMS.Pages.Staff.TakeOrderModel
+@{
+    ViewData["Title"] = "Take Order";
+}
+
+@section Styles {
+    <style>
+        .order-wrap { display: flex; gap: 24px; align-items: flex-start; }
+        .menu-side { flex: 1; min-width: 0; }
+        .bill-side { width: 400px; background: #fff; border-radius: 14px; padding: 20px; position: sticky; top: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+        .cat-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+        .cat-pill { border: 1px solid #cbd5e1; background: #fff; border-radius: 99px; padding: 8px 18px; font-weight: 600; }
+        .cat-pill.on { background: #121418; color: #fff; border-color: #121418; }
+        .dish-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+        .dish {
+            text-align: left; background: #fff; border: 3px solid #e2e8f0; border-radius: 16px; padding: 16px;
+            min-height: 130px; display: flex; flex-direction: column; gap: 6px; cursor: pointer;
+            transition: box-shadow .2s, border-color .2s;
+        }
+        .dish.glow { border-color: #f97316; box-shadow: 0 0 0 4px rgba(249,115,22,.35), 0 8px 24px rgba(249,115,22,.3); }
+        .dish-img { width: 100%; height: 110px; object-fit: cover; border-radius: 10px; background: #e2e8f0; }
+        .dish .name { font-weight: 700; font-size: 1.05rem; }
+        .dish .desc { font-size: .85rem; color: #64748b; flex: 1; }
+        .dish .price { font-weight: 700; font-size: 1.1rem; }
+        .added-tag { background: #c2410c; color: #fff; border-radius: 99px; font-size: .8rem; font-weight: 700; padding: 3px 10px; }
+        .bill-line { border-bottom: 1px solid #e2e8f0; padding: 12px 0; }
+        .q-btn { width: 44px; height: 44px; font-size: 1.3rem; }
+        .bill-total { font-size: 1.8rem; font-weight: 700; }
+        .readback { background: #f1f5f9; border-radius: 10px; padding: 12px; font-size: .95rem; }
+    </style>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="page-title">Table @Model.TableLabel</h1>
+        <div class="text-muted">@Model.Guests guests, dine-in</div>
+    </div>
+    <a href="/Staff/Tables" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to tables</a>
+</div>
+
+@if (TempData["ErrorMessage"] is string error)
+{
+    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-3" role="alert">
+        @error
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="order-wrap">
+    <section class="menu-side">
+        <div class="text-muted mb-2">Tap a dish to add it. Tap again, or use + and - on the bill, to change how many. Each piece gets its own note box.</div>
+        <div class="cat-pills" id="cats">
+            <button type="button" class="cat-pill on" data-cat="0">All</button>
+            @foreach (var c in Model.Categories)
+            {
+                <button type="button" class="cat-pill" data-cat="@c.Id">@c.Name</button>
+            }
+        </div>
+
+        <div class="dish-grid">
+            @foreach (var i in Model.Items)
+            {
+                <button type="button" class="dish" data-id="@i.Id" data-cat="@i.CategoryId"
+                        data-name="@i.Name" data-price="@i.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                        aria-label="Add @i.Name, RM @i.Price.ToString("F2")">
+                    @* Same picture and same "No Image" fallback as the Admin menu page. *@
+                    <img class="dish-img" alt="" loading="lazy"
+                         src="@(string.IsNullOrWhiteSpace(i.ImageUrl) ? "https://placehold.co/500x300?text=No+Image" : i.ImageUrl)"
+                         onerror="this.onerror=null;this.src='https://placehold.co/500x300?text=No+Image';" />
+                    <span class="name">@i.Name</span>
+                    <span class="desc">@i.Description</span>
+                    <span class="d-flex justify-content-between align-items-center" style="min-height:28px">
+                        <span class="price">RM @i.Price.ToString("F2")</span>
+                        <span class="added-tag" style="display:none" role="status">Added to order</span>
+                    </span>
+                </button>
+            }
+        </div>
+        @if (!Model.Items.Any())
+        {
+            <div class="text-muted">No dishes are available right now.</div>
+        }
+    </section>
+
+    <aside class="bill-side">
+        <h2 class="h5 fw-bold">Order and billing</h2>
+        <div id="billEmpty" class="text-muted py-3">Nothing added yet. Tap a dish on the left.</div>
+        <div id="billLines"></div>
+
+        <div class="d-flex justify-content-between align-items-end mt-3">
+            <div class="text-muted"><span id="itemCount">0</span> items</div>
+            <div class="bill-total">RM <span id="total">0.00</span></div>
+        </div>
+
+        <div class="mt-3">
+            <div class="fw-semibold mb-1">Read back to the guests</div>
+            <div class="readback" id="readback">Nothing to read back yet.</div>
+            <div class="small text-muted mt-1">Notes are for the read-back only for now. They are not saved with the order yet.</div>
+        </div>
+
+        <form method="post" asp-page-handler="Send" id="sendForm" class="mt-3">
+            <input type="hidden" name="TableId" value="@Model.TableId" />
+            <input type="hidden" name="Guests" value="@Model.Guests" />
+            <div id="hiddenLines"></div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="confirmBox" />
+                <label class="form-check-label" for="confirmBox">I read the order back and the guests agreed.</label>
+            </div>
+            <button type="submit" id="sendBtn" class="btn btn-lg w-100 text-white" style="background:#c2410c" disabled>Confirm and send to kitchen</button>
+        </form>
+    </aside>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            // One line per dish. A line with quantity 3 has three note boxes: "Dish 1", "Dish 2", "Dish 3".
+            const lines = [];          // { id, name, price, qty, notes: [] }
+            let flashTimer = null;
+            let openChips = null;      // "lineId:unitIndex" whose quick buttons are showing
+
+            const billLines = document.getElementById('billLines');
+            const billEmpty = document.getElementById('billEmpty');
+            const confirmBox = document.getElementById('confirmBox');
+            const sendBtn = document.getElementById('sendBtn');
+
+            const chipsFor = function (name) {
+                if (/steak|ribeye|sirloin|wagyu|beef/i.test(name))
+                    return ['Rare', 'Medium rare', 'Medium', 'Medium well', 'Well done'];
+                return ['No onion', 'Less salty', 'Extra spicy', 'Allergy: ask guest'];
+            };
+            const money = function (n) { return n.toFixed(2); };
+
+            function el(tag, cls, text) {
+                const e = document.createElement(tag);
+                if (cls) e.className = cls;
+                if (text !== undefined) e.textContent = text;
+                return e;
+            }
+
+            // Plus and minus change the quantity. Minus at 1 removes the dish.
+            function change(line, delta) {
+                if (delta > 0) { line.qty += 1; line.notes.push(''); }
+                else {
+                    line.qty -= 1; line.notes.pop();
+                    if (line.qty < 1) lines.splice(lines.indexOf(line), 1);
+                }
+                confirmBox.checked = false;
+                render();
+            }
+
+            function render() {
+                billLines.innerHTML = '';
+                billEmpty.style.display = lines.length ? 'none' : 'block';
+
+                lines.forEach(function (line) {
+                    const row = el('div', 'bill-line');
+
+                    const top = el('div', 'd-flex justify-content-between');
+                    top.appendChild(el('div', 'fw-bold', line.name));
+                    top.appendChild(el('div', 'fw-bold', 'RM ' + money(line.price * line.qty)));
+                    row.appendChild(top);
+
+                    const q = el('div', 'd-flex align-items-center gap-2 mt-2');
+                    const minus = el('button', 'btn btn-outline-secondary q-btn', '-');
+                    minus.type = 'button';
+                    minus.setAttribute('aria-label', 'One fewer ' + line.name);
+                    minus.onclick = function () { change(line, -1); };
+                    const plus = el('button', 'btn btn-outline-secondary q-btn', '+');
+                    plus.type = 'button';
+                    plus.setAttribute('aria-label', 'One more ' + line.name);
+                    plus.onclick = function () { change(line, 1); };
+                    q.appendChild(minus);
+                    q.appendChild(el('span', 'fs-5 fw-bold text-center', String(line.qty)));
+                    q.appendChild(plus);
+                    q.appendChild(el('span', 'small text-muted', 'RM ' + money(line.price) + ' each'));
+                    row.appendChild(q);
+
+                    // One optional note box for each piece, so each can be different.
+                    for (let i = 0; i < line.qty; i++) {
+                        const key = line.id + ':' + i;
+                        const unit = el('div', 'mt-2');
+                        unit.appendChild(el('label', 'small fw-semibold text-muted', line.name + ' ' + (i + 1)));
+
+                        const note = document.createElement('input');
+                        note.type = 'text';
+                        note.className = 'form-control';
+                        note.placeholder = 'Add a note (optional)';
+                        note.maxLength = 80;
+                        note.value = line.notes[i];
+                        note.setAttribute('aria-label', 'Note for ' + line.name + ' ' + (i + 1));
+                        unit.appendChild(note);
+
+                        const chips = el('div', 'd-flex flex-wrap gap-1 mt-1');
+                        chips.style.display = (openChips === key) ? 'flex' : 'none';
+                        chipsFor(line.name).forEach(function (c) {
+                            const b = el('button', 'btn btn-sm btn-outline-secondary', c);
+                            b.type = 'button';
+                            // mousedown keeps the focus on the note box so the buttons do not vanish
+                            b.onmousedown = function (ev) { ev.preventDefault(); };
+                            b.onclick = function () { line.notes[i] = c; note.value = c; updateReadback(); };
+                            chips.appendChild(b);
+                        });
+                        unit.appendChild(chips);
+
+                        note.onfocus = function () {
+                            openChips = key;
+                            document.querySelectorAll('.chips-open').forEach(function (x) { x.style.display = 'none'; x.classList.remove('chips-open'); });
+                            chips.style.display = 'flex';
+                            chips.classList.add('chips-open');
+                        };
+                        note.oninput = function () { line.notes[i] = note.value; updateReadback(); };
+                        row.appendChild(unit);
+                    }
+
+                    billLines.appendChild(row);
+                });
+                updateTotals();
+            }
+
+            function readbackFor(l) {
+                let text = l.qty + ' x ' + l.name;
+                const filled = l.notes.map(function (n, i) { return { n: n.trim(), i: i + 1 }; })
+                                      .filter(function (x) { return x.n; });
+                if (!filled.length) return text;
+                const allSame = filled.length === l.qty && filled.every(function (x) { return x.n === filled[0].n; });
+                if (allSame && l.qty > 1) return text + ' (all ' + filled[0].n + ')';
+                if (l.qty === 1) return text + ' (' + filled[0].n + ')';
+                return text + ' (' + filled.map(function (x) { return x.i + ': ' + x.n; }).join(', ') + ')';
+            }
+
+            function updateReadback() {
+                document.getElementById('readback').textContent = lines.length
+                    ? lines.map(readbackFor).join(', ') + '.'
+                    : 'Nothing to read back yet.';
+            }
+
+            function updateTotals() {
+                const count = lines.reduce(function (a, l) { return a + l.qty; }, 0);
+                const total = lines.reduce(function (a, l) { return a + l.qty * l.price; }, 0);
+                document.getElementById('itemCount').textContent = count;
+                document.getElementById('total').textContent = money(total);
+                updateReadback();
+                sendBtn.disabled = !(lines.length > 0 && confirmBox.checked);
+            }
+
+            confirmBox.onchange = updateTotals;
+
+            // Tap a dish: add one more of it, and glow for two seconds.
+            document.querySelectorAll('.dish').forEach(function (card) {
+                card.addEventListener('click', function () {
+                    const id = parseInt(card.dataset.id, 10);
+                    const existing = lines.find(function (l) { return l.id === id; });
+                    if (existing) { existing.qty += 1; existing.notes.push(''); }
+                    else lines.push({ id: id, name: card.dataset.name, price: parseFloat(card.dataset.price), qty: 1, notes: [''] });
+                    confirmBox.checked = false;
+                    render();
+
+                    document.querySelectorAll('.dish').forEach(function (c) {
+                        c.classList.remove('glow');
+                        c.querySelector('.added-tag').style.display = 'none';
+                    });
+                    card.classList.add('glow');
+                    card.querySelector('.added-tag').style.display = 'inline-block';
+                    clearTimeout(flashTimer);
+                    flashTimer = setTimeout(function () {
+                        card.classList.remove('glow');
+                        card.querySelector('.added-tag').style.display = 'none';
+                    }, 2000);
+                });
+            });
+
+            // Category filter
+            document.querySelectorAll('.cat-pill').forEach(function (p) {
+                p.addEventListener('click', function () {
+                    document.querySelectorAll('.cat-pill').forEach(function (x) { x.classList.remove('on'); });
+                    p.classList.add('on');
+                    const cat = p.dataset.cat;
+                    document.querySelectorAll('.dish').forEach(function (d) {
+                        d.style.display = (cat === '0' || d.dataset.cat === cat) ? '' : 'none';
+                    });
+                });
+            });
+
+            // Before posting, write the bill into hidden inputs the server can bind.
+            document.getElementById('sendForm').addEventListener('submit', function (e) {
+                if (!lines.length || !confirmBox.checked) { e.preventDefault(); return; }
+                const box = document.getElementById('hiddenLines');
+                box.innerHTML = '';
+                lines.forEach(function (l, i) {
+                    [['MenuItemId', l.id], ['Quantity', l.qty]].forEach(function (pair) {
+                        const h = document.createElement('input');
+                        h.type = 'hidden';
+                        h.name = 'Lines[' + i + '].' + pair[0];
+                        h.value = pair[1];
+                        box.appendChild(h);
+                    });
+                });
+            });
+
+            render();
+        })();
+    </script>
+}
