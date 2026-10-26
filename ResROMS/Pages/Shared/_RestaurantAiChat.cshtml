@@ -1,0 +1,250 @@
+@* This partial is shared by the Admin widget and the full /Assistant page.
+   The database role gate is enforced in Program.cs, not by the UI. *@
+@{
+    var assistantIsAdmin = User.IsInRole("Admin");
+}
+<style>
+  .rr-chat-widget { position:fixed; right:22px; bottom:20px; z-index:1100; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; color:#233044; }
+  .rr-chat-widget * { box-sizing:border-box; }
+  .rr-chat-launcher { border:0; color:white; background:linear-gradient(135deg,#c94f13,#f0782d); border-radius:999px; padding:13px 19px;
+    box-shadow:0 10px 28px #ab471c55; font-weight:750; cursor:pointer; display:flex; gap:9px; align-items:center; }
+  .rr-chat-launcher:hover { filter:brightness(.97); transform:translateY(-1px); }
+  .rr-chat-launcher:focus-visible,.rr-chat-panel :is(a,button,textarea,select):focus-visible { outline:3px solid #f0a536; outline-offset:2px; }
+  .rr-chat-panel { position:absolute; bottom:70px; right:0; display:flex; flex-direction:column; width:min(430px,calc(100vw - 24px));
+    height:min(620px,calc(100vh - 100px)); border:1px solid #dce2ea; border-radius:19px; overflow:hidden;
+    background:#fff; box-shadow:0 22px 65px #18263b45; }
+  .rr-chat-panel[hidden] { display:none!important; }
+  .rr-chat-top { display:flex; justify-content:space-between; align-items:center; padding:16px 18px; background:#142238; color:#fff; gap:12px; }
+  .rr-chat-titleblock { min-width:0; display:flex; gap:11px; align-items:center; }
+  .rr-chat-brandmark { height:38px; width:38px; flex:none; display:grid; place-items:center; border-radius:12px;
+    background:linear-gradient(140deg,#e9793c,#ce4816); font-size:1.17rem; }
+  .rr-chat-title { font-size:1.04rem; font-weight:760; margin:0; line-height:1.2; color:#fff; }
+  .rr-chat-subtitle { display:block; font-size:.73rem; opacity:.8; margin-top:4px; color:#edf3ff; }
+  .rr-chat-controls { display:flex; gap:4px; align-items:center; }
+  .rr-chat-control { border:0; color:#f5f7fa; background:transparent; display:grid; place-items:center; width:32px;height:32px;
+    text-decoration:none; border-radius:8px; cursor:pointer; }
+  .rr-chat-control:hover { background:#ffffff24; color:white; }
+  .rr-chat-meta { display:flex; align-items:center; flex-wrap:wrap; justify-content:space-between; gap:6px; background:#f6f8fb;
+    border-bottom:1px solid #e6eaf0; padding:9px 16px; font-size:.76rem; color:#526078; }
+  .rr-chat-badge { display:inline-flex; gap:6px; align-items:center; color:#155e41; font-weight:700; }
+  .rr-chat-badge:before { content:""; width:7px; height:7px; border-radius:99px; background:#26a46c; }
+  .rr-chat-period { display:inline-flex; align-items:center; gap:8px; font-weight:600; }
+  .rr-chat-period select { border:1px solid #d4dce6; background:white; border-radius:8px; padding:4px 6px; font-size:.77rem; color:#233044; }
+  .rr-chat-messages { min-height:0; flex:1; overflow-y:auto; background:linear-gradient(180deg,#f4f7fb,#fafbfd);
+    padding:16px; display:flex; flex-direction:column; gap:14px; scroll-behavior:smooth; }
+  .rr-chat-bubble-wrap { display:flex; flex-direction:column; gap:4px; max-width:96%; }
+  .rr-chat-bubble-wrap.rr-chat-my { align-self:flex-end; align-items:flex-end; }
+  .rr-chat-bubble-wrap.rr-chat-theirs { align-self:flex-start; align-items:flex-start; }
+  .rr-chat-bubble { padding:11px 14px; border-radius:16px; white-space:pre-wrap; overflow-wrap:anywhere; font-size:.9rem;
+    line-height:1.58; box-shadow:0 2px 6px #1d31420d; }
+  .rr-chat-user { background:#d95818; color:#fff; border-bottom-right-radius:5px; }
+  .rr-chat-assistant { background:#fff; color:#243247; border:1px solid #e0e7ef; border-bottom-left-radius:5px; }
+  .rr-chat-warning { background:#fff7e7; border:1px solid #f2d3a0; color:#754219; }
+  .rr-chat-copy { border:0; background:none; color:#748094; font-size:.7rem; cursor:pointer; padding:2px 6px; border-radius:5px; }
+  .rr-chat-copy:hover { color:#18314e; background:#e6ebf2; }
+  .rr-chat-prompts { padding:1px 0 6px; align-self:stretch; }
+  .rr-chat-prompts-title { color:#5b687a; font-size:.75rem; font-weight:650; margin:0 0 8px; }
+  .rr-chat-chips { display:flex; flex-wrap:wrap; gap:7px; }
+  .rr-chat-chip { border:1px solid #d6e1ea; background:white; border-radius:999px; padding:8px 12px; color:#2b485f;
+    font-size:.75rem; font-weight:600; cursor:pointer; transition:background .15s ease; }
+  .rr-chat-chip:hover { background:#fff3eb; border-color:#e7a887; color:#a33d12; }
+  .rr-chat-bottom { flex:none; background:#fff; border-top:1px solid #e2e7ee; padding:12px 14px 10px; }
+  .rr-chat-form { display:flex; gap:8px; align-items:flex-end; background:#fafbfd; border:1px solid #d4dce7;
+    border-radius:13px; padding:6px; }
+  .rr-chat-input { width:100%; min-height:32px; max-height:105px; resize:vertical; border:0; outline:0; background:transparent;
+    padding:6px 8px; color:#233044; font:inherit; font-size:.87rem; line-height:1.4; }
+  .rr-chat-input:focus { outline:none; }
+  .rr-chat-send { min-width:42px; height:40px; border:0; background:#df601c; color:white; font-size:1rem;
+    border-radius:10px; font-weight:700; cursor:pointer; }
+  .rr-chat-send:hover { background:#bb470e; }
+  .rr-chat-send:disabled { opacity:.55; cursor:wait; }
+  .rr-chat-foot { display:flex; justify-content:space-between; gap:8px; align-items:center; margin-top:6px; color:#7a8394; font-size:.69rem; }
+  .rr-chat-privacy { font-size:.68rem; color:#7a8394; line-height:1.35; margin:6px 0 0; }
+  .rr-chat-status { color:#768399; font-size:.75rem; margin:0 0 6px 2px; min-height:0; }
+  @@media (max-width:520px) { .rr-chat-widget:not(.rr-standalone){right:10px;bottom:10px;}
+    .rr-chat-panel { width:calc(100vw - 20px); height:min(78vh,680px); } .rr-chat-top { padding:13px; } }
+  @@media (prefers-reduced-motion:reduce) { .rr-chat-widget * { transition:none!important;scroll-behavior:auto!important; } }
+</style>
+<div class="rr-chat-widget" id="rrRestaurantChat">
+  <button type="button" class="rr-chat-launcher" id="rrRestaurantChatToggle"
+    aria-label="Open AI assistant" aria-controls="rrRestaurantChatPanel" aria-expanded="false">
+    <i class="bi bi-stars" aria-hidden="true"></i> Ask AI
+  </button>
+  <section class="rr-chat-panel" id="rrRestaurantChatPanel" aria-label="ResROMS AI assistant" hidden>
+    <div class="rr-chat-top">
+      <div class="rr-chat-titleblock">
+        <span class="rr-chat-brandmark" aria-hidden="true"><i class="bi bi-stars"></i></span>
+        <div><h2 class="rr-chat-title">@(assistantIsAdmin ? "ResROMS Business Copilot" : "ResROMS Assistant")</h2>
+          <span class="rr-chat-subtitle">@(assistantIsAdmin ? "Business ideas · Sales insights · Menu" : "Menu · Hours · Reservation guidance")</span></div>
+      </div>
+      <div class="rr-chat-controls">
+        <a class="rr-chat-control" href="/Assistant" title="Open full-page chat" aria-label="Open full-page chat"><i class="bi bi-arrows-fullscreen" aria-hidden="true"></i></a>
+        <button class="rr-chat-control" type="button" id="rrRestaurantChatClear" title="Start new conversation" aria-label="Start new conversation"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></button>
+        <button class="rr-chat-control rr-chat-close" type="button" id="rrRestaurantChatClose" aria-label="Close chat"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+      </div>
+    </div>
+    <div class="rr-chat-meta">
+      <span class="rr-chat-badge">@(assistantIsAdmin ? "Administrator insights" : "Restaurant information")</span>
+      @if (assistantIsAdmin)
+      {
+        <label class="rr-chat-period" for="rrRestaurantChatPeriod">Data range
+          <select id="rrRestaurantChatPeriod" name="days" aria-label="Order reporting period">
+            <option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option>
+          </select>
+        </label>
+      }
+    </div>
+    <div class="rr-chat-messages" id="rrRestaurantChatMessages" aria-live="polite" aria-relevant="additions text">
+      <div class="rr-chat-bubble-wrap rr-chat-theirs"><div class="rr-chat-bubble rr-chat-assistant">@(assistantIsAdmin
+          ? "Hello! I can help you understand which dishes sell most, explore practical marketing ideas, or answer restaurant questions. Choose a prompt below to get started."
+          : "Hello! Ask me about our dishes, restaurant hours, or how to book a table.")</div></div>
+      <div class="rr-chat-prompts" id="rrRestaurantChatPrompts">
+        <p class="rr-chat-prompts-title">Try asking</p>
+        <div class="rr-chat-chips">
+          @if (assistantIsAdmin)
+          {
+            <button type="button" class="rr-chat-chip" data-chat-prompt="What are the most ordered dishes?">📈 Most ordered dishes</button>
+            <button type="button" class="rr-chat-chip" data-chat-prompt="How can I promote my restaurant on a small budget?">📣 Marketing ideas</button>
+            <button type="button" class="rr-chat-chip" data-chat-prompt="How can I use popular dishes to improve our menu and promotions?">🍽️ Menu opportunities</button>
+            <button type="button" class="rr-chat-chip" data-chat-prompt="Give me three affordable social media campaign ideas for this restaurant.">💡 Campaign ideas</button>
+          }
+          else
+          {
+            <button type="button" class="rr-chat-chip" data-chat-prompt="What desserts do you have?">🍰 Desserts</button>
+            <button type="button" class="rr-chat-chip" data-chat-prompt="When do you open and close?">🕒 Opening hours</button>
+            <button type="button" class="rr-chat-chip" data-chat-prompt="How can I make a table reservation?">📅 Reservations</button>
+          }
+        </div>
+      </div>
+    </div>
+    <div class="rr-chat-bottom">
+      <p class="rr-chat-status" id="rrRestaurantChatStatus" role="status" aria-live="polite"></p>
+      <form id="rrRestaurantChatForm" class="rr-chat-form" autocomplete="off">
+        @Html.AntiForgeryToken()
+        <textarea id="rrRestaurantChatInput" class="rr-chat-input" name="message" rows="1" maxlength="700" required
+          aria-label="Write a question" placeholder="Ask a question…"></textarea>
+        <button type="submit" id="rrRestaurantChatSend" class="rr-chat-send" aria-label="Send message" title="Send message"><i class="bi bi-arrow-up" aria-hidden="true"></i></button>
+      </form>
+      <div class="rr-chat-foot"><span>Enter to send · Shift+Enter for new line</span><span id="rrRestaurantChatCount">0 / 700</span></div>
+      <p class="rr-chat-privacy">Responses may be inaccurate. Messages and relevant restaurant data are sent to Gemini. Never share confidential information. Chat cannot change orders or bookings.</p>
+    </div>
+  </section>
+</div>
+<script>
+(() => {
+  'use strict';
+  const widget = document.getElementById('rrRestaurantChat');
+  if (!widget) return;
+  const panel = document.getElementById('rrRestaurantChatPanel');
+  const toggle = document.getElementById('rrRestaurantChatToggle');
+  const close = document.getElementById('rrRestaurantChatClose');
+  const clear = document.getElementById('rrRestaurantChatClear');
+  const form = document.getElementById('rrRestaurantChatForm');
+  const input = document.getElementById('rrRestaurantChatInput');
+  const submit = document.getElementById('rrRestaurantChatSend');
+  const messages = document.getElementById('rrRestaurantChatMessages');
+  const status = document.getElementById('rrRestaurantChatStatus');
+  const count = document.getElementById('rrRestaurantChatCount');
+  const prompts = document.getElementById('rrRestaurantChatPrompts');
+  const period = document.getElementById('rrRestaurantChatPeriod');
+  const history = [];
+  let busy = false;
+
+  function setOpen(open) {
+    panel.hidden = !open;
+    toggle.setAttribute('aria-expanded', String(open));
+    if (open) input.focus();
+  }
+  function updateCount() { count.textContent = `${input.value.length} / 700`; }
+  function addBubble(text, kind, warning = false) {
+    const wrap = document.createElement('div');
+    wrap.className = 'rr-chat-bubble-wrap ' + (kind === 'user' ? 'rr-chat-my' : 'rr-chat-theirs');
+    const bubble = document.createElement('div');
+    bubble.className = 'rr-chat-bubble ' + (warning ? 'rr-chat-warning' : kind === 'user' ? 'rr-chat-user' : 'rr-chat-assistant');
+    bubble.textContent = text; // Deliberately no HTML/markdown injection from the AI.
+    wrap.appendChild(bubble);
+    if (kind !== 'user' && !warning && text !== 'Thinking…') {
+      const copy = document.createElement('button');
+      copy.type = 'button'; copy.className = 'rr-chat-copy'; copy.textContent = 'Copy answer';
+      copy.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(text); copy.textContent = 'Copied'; }
+        catch { copy.textContent = 'Copy unavailable'; }
+      });
+      wrap.appendChild(copy);
+    }
+    messages.appendChild(wrap);
+    messages.scrollTop = messages.scrollHeight;
+    return wrap;
+  }
+  toggle.addEventListener('click', () => setOpen(panel.hidden));
+  close.addEventListener('click', () => setOpen(false));
+  clear.addEventListener('click', () => {
+    history.length = 0;
+    messages.replaceChildren();
+    if (prompts) messages.appendChild(prompts);
+    addBubble('New conversation started. What would you like to know?', 'assistant');
+    status.textContent = '';
+  });
+  input.addEventListener('input', updateCount);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      if (!busy) form.requestSubmit();
+    }
+  });
+  widget.querySelectorAll('[data-chat-prompt]').forEach(button => {
+    button.addEventListener('click', () => {
+      if (busy) return;
+      input.value = button.getAttribute('data-chat-prompt') || '';
+      updateCount();
+      form.requestSubmit();
+    });
+  });
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const question = input.value.trim();
+    if (busy || question.length < 1 || question.length > 700) return;
+    const previous = history.slice(-6);
+    input.value = ''; updateCount();
+    addBubble(question, 'user');
+    if (prompts && prompts.isConnected) prompts.remove();
+    busy = true; submit.disabled = true; status.textContent = 'Thinking…';
+    const spinner = addBubble('Thinking…', 'assistant');
+    try {
+      const data = new FormData(form);
+      data.set('message', question);
+      data.set('history', JSON.stringify(previous));
+      data.set('days', period ? period.value : '30');
+      const response = await fetch('/assistant/ask', {
+        method: 'POST', credentials: 'same-origin', cache: 'no-store', body: data
+      });
+      spinner.remove();
+      if (response.redirected && response.url.includes('/Login')) {
+        addBubble('Your session expired. Sign in and try again.', 'assistant', true);
+        input.value = question; updateCount(); return;
+      }
+      if (response.status === 429) {
+        addBubble('Too many requests. Please wait a few minutes.', 'assistant', true);
+        input.value = question; updateCount(); return;
+      }
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        addBubble(result.message || 'The assistant is unavailable.', 'assistant', true);
+        input.value = question; updateCount(); return;
+      }
+      addBubble(result.reply, 'assistant');
+      history.push({ role: 'user', text: question }, { role: 'assistant', text: result.reply });
+      while (history.length > 8) history.shift();
+    } catch {
+      spinner.remove();
+      addBubble('Unable to connect to the assistant. Please retry.', 'assistant', true);
+      input.value = question; updateCount();
+    } finally {
+      busy = false; submit.disabled = false; status.textContent = '';
+      messages.scrollTop = messages.scrollHeight;
+      input.focus();
+    }
+  });
+  updateCount();
+})();
+</script>

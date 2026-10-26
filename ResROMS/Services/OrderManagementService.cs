@@ -46,7 +46,8 @@ public sealed class OrderManagementService : IOrderManagementService
 
     public async Task<IReadOnlyList<MenuChoice>> GetMenuChoicesAsync() =>
         await _db.MenuItems.AsNoTracking().Where(i => i.IsAvailable)
-            .OrderBy(i => i.Name).Select(i => new MenuChoice(i.Id, i.Name, i.Price))
+            .OrderBy(i => i.Category!.Name).ThenBy(i => i.Name)
+            .Select(i => new MenuChoice(i.Id, i.Name, i.Price, i.Category!.Name))
             .ToListAsync();
 
     public async Task<IReadOnlyList<AccountChoice>> GetCustomerChoicesAsync() =>

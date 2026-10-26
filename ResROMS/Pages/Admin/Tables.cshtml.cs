@@ -26,6 +26,18 @@ public class TablesModel : PageModel
         public string Shape { get; set; } = "Square";
     }
 
+    public class BatchTablesForm
+    {
+        [Required, RegularExpression("^[A-Za-z0-9]{1,12}$")]
+        public string Prefix { get; set; } = "T";
+        [Range(1, 999)] public int StartNumber { get; set; } = 1;
+        [Range(1, 40)] public int Count { get; set; } = 5;
+        [Range(1, 20)] public int Capacity { get; set; } = 4;
+        [Range(1, int.MaxValue)] public int DiningAreaId { get; set; }
+        [Required, RegularExpression("Square|Round|Rectangle")]
+        public string Shape { get; set; } = "Square";
+    }
+
     public class AreaForm
     {
         [Required, StringLength(80)]
@@ -36,6 +48,7 @@ public class TablesModel : PageModel
     // so submitting NewArea does not accidentally validate NewTable (and vice versa).
     public TableForm NewTable { get; set; } = new();
     public AreaForm NewArea { get; set; } = new();
+    public BatchTablesForm Batch { get; set; } = new();
 
     public IReadOnlyList<DiningAreaSummary> DiningAreas { get; private set; } = [];
     public IReadOnlyList<TableSummary> Tables { get; private set; } = [];
@@ -89,6 +102,18 @@ public class TablesModel : PageModel
         }
         return Result(await _tables.AddTableAsync(
             input.TableNumber, input.Capacity, input.DiningAreaId, input.Shape));
+    }
+
+    public async Task<IActionResult> OnPostAddBatchAsync([Bind(Prefix = "Batch")] BatchTablesForm input)
+    {
+        if (!ModelState.IsValid)
+        {
+            ActiveModal = "batchTablesModal";
+            await LoadAsync();
+            return Page();
+        }
+        return Result(await _tables.AddTablesBatchAsync(input.Prefix, input.StartNumber,
+            input.Count, input.Capacity, input.DiningAreaId, input.Shape));
     }
 
     public async Task<IActionResult> OnPostEditTableAsync(int id, [Bind(Prefix = "EditTable")] TableForm input)

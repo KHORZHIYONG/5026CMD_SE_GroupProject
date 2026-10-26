@@ -66,12 +66,14 @@ public sealed class ReservationsModel : PageModel
     public async Task<IActionResult> OnGetAvailabilityAsync(DateTime startLocal,
         int durationMinutes, int partySize)
     {
-        var options = await _reservations.FindAvailableTablesAsync(startLocal, durationMinutes, partySize, forCustomer: true);
-        return new JsonResult(options.Select(t => new
-        {
-            id = t.Id,
-            label = $"{t.TableNumber} · {t.AreaName} · {t.Capacity} seats"
-        }));
+        var result = await _reservations.CheckAvailabilityAsync(startLocal, durationMinutes, partySize, forCustomer: true);
+        return new JsonResult(new {
+            error = result.Error,
+            tables = result.Tables.Select(t => new {
+                id = t.Id,
+                label = $"{t.TableNumber} · {t.AreaName} · {t.Capacity} seats"
+            })
+        });
     }
 
     public async Task<IActionResult> OnPostCreateAsync([Bind(Prefix = "NewBooking")] BookingFields input)

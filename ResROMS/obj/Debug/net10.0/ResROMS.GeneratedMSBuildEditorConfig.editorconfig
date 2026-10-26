@@ -75,6 +75,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cUmVzdGF1cmFudEluZm8uY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/Zykee/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Admin/StaffScheduling.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cU3RhZmZTY2hlZHVsaW5nLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/Zykee/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Admin/SystemSettings.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cU3lzdGVtU2V0dGluZ3MuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
@@ -89,6 +93,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/Zykee/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Announcements.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQW5ub3VuY2VtZW50cy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Zykee/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Assistant.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXNzaXN0YW50LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Zykee/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Customer/Reservations.cshtml]
@@ -117,6 +125,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/Zykee/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Shared/_AdminLayout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXF9BZG1pbkxheW91dC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Zykee/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Shared/_RestaurantAiChat.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXF9SZXN0YXVyYW50QWlDaGF0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Zykee/OneDrive/Documents/INTI College Penang/SEMESTER 02/SOFTWARE ENGINEERING/ASSIGNMENT/ResROMS/ResROMS/Pages/Shared/_ValidationScriptsPartial.cshtml]

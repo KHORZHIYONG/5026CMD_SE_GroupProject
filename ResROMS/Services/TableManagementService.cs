@@ -76,6 +76,32 @@ public sealed class TableManagementService : ITableManagementService
         return await SaveAsync($"Table '{tableNumber}' created.");
     }
 
+    // One SaveChanges call ensures an all-or-nothing batch (no partial table creation).
+    public async Task<OperationResult> AddTablesBatchAsync(string prefix, int startNumber,
+        int count, int capacity, int diningAreaId, string shape)
+    {
+        prefix = (prefix ?? string.Empty).Trim().ToUpperInvariant();
+        if (!System.Text.RegularExpressions.Regex.IsMatch(prefix, "^[A-Z0-9]{1,12}$"))
+            return Error("Prefix must be 1–12 letters or numbers, e.g. T or VIP.");
+        if (startNumber < 1 || startNumber > 999 || count < 1 || count > 40 ||
+            startNumber + count - 1 > 999)
+            return Error("Choose 1–40 tables and a starting number between 1 and 999.");
+        if (capacity is < 1 or > 20 || shape is not ("Square" or "Round" or "Rectangle"))
+            return Error("Choose a valid seating capacity and shape.");
+        if (!await _db.DiningAreas.AnyAsync(a => a.Id == diningAreaId))
+            return Error("Choose an existing dining area.");
+        var numbers = Enumerable.Range(startNumber, count)
+            .Select(n => $"{prefix}-{n:D2}").ToArray();
+        if (await _db.Tables.AnyAsync(t => numbers.Contains(t.TableNumber)))
+            return Error("One or more generated table numbers already exist. Change prefix or starting number.");
+        _db.Tables.AddRange(numbers.Select(number => new Table {
+            TableNumber = number, Capacity = capacity, DiningAreaId = diningAreaId,
+            Shape = shape, Status = "Available" }));
+        var saved = await SaveAsync($"{numbers.Length} tables added: {numbers[0]} through {numbers[^1]}.");
+        if (!saved.Success) _db.ChangeTracker.Clear();
+        return saved;
+    }
+
     public async Task<OperationResult> EditTableAsync(int id, string tableNumber, int capacity, int diningAreaId, string shape)
     {
         tableNumber = tableNumber.Trim();

@@ -61,8 +61,6 @@ wwwroot\lib\jquery\dist\jquery.slim.js
 wwwroot\lib\jquery\dist\jquery.slim.min.js
 wwwroot\lib\jquery\dist\jquery.slim.min.map
 wwwroot\lib\jquery\LICENSE.txt
-C:\Users\Zykee\OneDrive\Documents\INTI College Penang\SEMESTER 02\SOFTWARE ENGINEERING\ASSIGNMENT\ResROMS\ResROMS\wwwroot\css\site.css
-C:\Users\Zykee\OneDrive\Documents\INTI College Penang\SEMESTER 02\SOFTWARE ENGINEERING\ASSIGNMENT\ResROMS\ResROMS\wwwroot\favicon.ico
 C:\Users\Zykee\OneDrive\Documents\INTI College Penang\SEMESTER 02\SOFTWARE ENGINEERING\ASSIGNMENT\ResROMS\ResROMS\wwwroot\js\site.js
 C:\Users\Zykee\OneDrive\Documents\INTI College Penang\SEMESTER 02\SOFTWARE ENGINEERING\ASSIGNMENT\ResROMS\ResROMS\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
 C:\Users\Zykee\OneDrive\Documents\INTI College Penang\SEMESTER 02\SOFTWARE ENGINEERING\ASSIGNMENT\ResROMS\ResROMS\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map
@@ -123,3 +121,5 @@ C:\Users\Zykee\OneDrive\Documents\INTI College Penang\SEMESTER 02\SOFTWARE ENGIN
 C:\Users\Zykee\OneDrive\Documents\INTI College Penang\SEMESTER 02\SOFTWARE ENGINEERING\ASSIGNMENT\ResROMS\ResROMS\wwwroot\lib\jquery\dist\jquery.slim.min.js
 C:\Users\Zykee\OneDrive\Documents\INTI College Penang\SEMESTER 02\SOFTWARE ENGINEERING\ASSIGNMENT\ResROMS\ResROMS\wwwroot\lib\jquery\dist\jquery.slim.min.map
 C:\Users\Zykee\OneDrive\Documents\INTI College Penang\SEMESTER 02\SOFTWARE ENGINEERING\ASSIGNMENT\ResROMS\ResROMS\wwwroot\lib\jquery\LICENSE.txt
+C:\Users\Zykee\OneDrive\Documents\INTI College Penang\SEMESTER 02\SOFTWARE ENGINEERING\ASSIGNMENT\ResROMS\ResROMS\wwwroot\favicon.ico
+C:\Users\Zykee\OneDrive\Documents\INTI College Penang\SEMESTER 02\SOFTWARE ENGINEERING\ASSIGNMENT\ResROMS\ResROMS\wwwroot\css\site.css

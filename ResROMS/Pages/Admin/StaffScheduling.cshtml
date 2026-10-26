@@ -1,0 +1,234 @@
+@page "/Admin/StaffScheduling"
+@model ResROMS.Pages.Admin.StaffSchedulingModel
+@using ResROMS.Services
+@{
+    ViewData["Title"] = "Staff Scheduling";
+    var days = Model.Days;
+    var first = days[0];
+    var last = days[6];
+}
+@section Styles {
+<style>
+    .schedule-header {display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between}
+    .schedule-card {border:1px solid #e3e8ed;background:white;border-radius:14px;box-shadow:0 6px 22px rgba(22,34,55,.04)}
+    .people-pool {display:flex;flex-wrap:wrap;gap:9px}
+    .staff-chip {border:1px solid #ffc6a5;background:#fff7f1;color:#713c24;border-radius:9px;padding:9px 12px;cursor:grab;font-weight:600;font-size:.87rem}
+    .staff-chip:focus {outline:2px solid #e85d04}
+    .staff-chip small {font-weight:400;display:block;color:#836052}
+    .week-grid {display:grid;grid-template-columns:repeat(7,minmax(158px,1fr));gap:8px;min-width:1120px}
+    .schedule-day {border:1px dashed #cbd5e1;border-radius:12px;min-height:214px;background:#fbfcfd;padding:11px;transition:background .15s,border-color .15s}
+    .schedule-day.drop-target {background:#fff0e6;border-color:#e85d04}
+    .schedule-day.closed {background:#f4f5f7;border-style:solid}
+    .day-heading {font-size:.85rem;font-weight:700}
+    .day-hours {font-size:.75rem;color:#687889;min-height:32px}
+    .shift-block {background:white;border-left:4px solid #e85d04;box-shadow:0 2px 10px rgba(20,25,40,.06);border-radius:9px;padding:9px;margin-top:9px;cursor:grab}
+    .shift-block.kitchen {border-left-color:#3563a6}
+    .shift-block .times {font-size:.78rem;color:#5e7081}
+    .shift-actions {display:flex;gap:8px;align-items:center;margin-top:5px}
+    .shift-actions button {font-size:.74rem;padding:0;border:0;background:none;color:#bf541c}
+    .shift-actions form {margin:0}
+    .shift-actions .danger {color:#ba2433}
+    .shift-block:focus {outline:2px solid #e85d04}
+    .drag-hint {font-size:.8rem;color:#6a7684}
+    .orange-btn {background:#e85d04;color:white;border:0}
+    .orange-btn:hover {background:#cc4e00;color:white}
+    @@media(max-width:600px) {.schedule-day{min-height:170px}}
+</style>
+}
+<div class="schedule-header mb-3">
+    <div>
+        <h1 class="fw-bold mb-1">Staff Scheduling</h1>
+        <p class="text-muted mb-0">Drag a staff member to a day, or drag a shift to reschedule it. Shifts use restaurant-local time (Malaysia).</p>
+    </div>
+    <button type="button" id="addShiftButton" class="btn orange-btn px-3" data-bs-toggle="modal" data-bs-target="#shiftModal">
+        <i class="bi bi-plus-lg me-1"></i> Add shift
+    </button>
+</div>
+@if (TempData["SuccessMessage"] is string message) { <div class="alert alert-success" role="status">@message</div> }
+@if (TempData["ErrorMessage"] is string error) { <div class="alert alert-danger" role="alert">@error</div> }
+@if (!ViewData.ModelState.IsValid) { <div class="alert alert-danger" asp-validation-summary="All" role="alert"></div> }
+
+<div class="schedule-card p-3 mb-3">
+    <div class="d-flex gap-3 flex-wrap align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center gap-2">
+            <a class="btn btn-sm btn-outline-secondary" asp-page="/Admin/StaffScheduling" asp-route-week="@Model.PreviousWeek.ToString("yyyy-MM-dd")" aria-label="Previous week"><i class="bi bi-chevron-left"></i></a>
+            <strong>@first.ToString("dd MMM") – @last.ToString("dd MMM yyyy")</strong>
+            <a class="btn btn-sm btn-outline-secondary" asp-page="/Admin/StaffScheduling" asp-route-week="@Model.NextWeek.ToString("yyyy-MM-dd")" aria-label="Next week"><i class="bi bi-chevron-right"></i></a>
+            <a class="btn btn-sm btn-outline-secondary" asp-page="/Admin/StaffScheduling">This week</a>
+        </div>
+        <div class="small text-muted">Limits: @Model.Board.Policy.MaximumShiftHours h/shift · @Model.Board.Policy.MaximumWeeklyHours h/week · @Model.Board.Policy.MinimumRestHours h rest</div>
+    </div>
+    <div class="d-flex align-items-center gap-3 flex-wrap mb-3">
+        <div>
+            <label class="small fw-semibold" for="quickStart">Drag-to-create start</label>
+            <input id="quickStart" type="time" class="form-control form-control-sm" value="10:00" />
+        </div>
+        <div>
+            <label class="small fw-semibold" for="quickEnd">End</label>
+            <input id="quickEnd" type="time" class="form-control form-control-sm" value="18:00" />
+        </div>
+        <span class="drag-hint">Choose times first; if the end time is earlier, the shift ends tomorrow. The server checks operating hours.</span>
+    </div>
+    <div class="small fw-semibold mb-2">Active staff <span class="text-muted fw-normal">(drag onto a day)</span></div>
+    <div class="people-pool" aria-label="Staff available for scheduling">
+        @foreach (var staff in Model.Board.Staff)
+        {
+            <div class="staff-chip" draggable="true" tabindex="0" data-drag-kind="staff" data-staff-id="@staff.Id" title="Drag to a day or use Add shift">
+                @staff.FullName <small>@staff.Role</small>
+            </div>
+        }
+        @if (Model.Board.Staff.Count == 0)
+        {
+            <div class="text-muted small">No active Waiter or Kitchen Staff accounts. Add one in <a href="/Admin/Accounts">Accounts</a>.</div>
+        }
+    </div>
+</div>
+
+<div class="schedule-card p-3">
+    <div class="overflow-auto" aria-label="Weekly staff roster">
+        <div class="week-grid">
+            @foreach (var day in days)
+            {
+                var date = day.ToDateTime(TimeOnly.MinValue);
+                var hrs = Model.Board.OpeningHours.FirstOrDefault(h => h.DayOfWeek == (int)day.DayOfWeek);
+                var closed = hrs is null || hrs.IsClosed;
+                var shifts = Model.Board.Shifts.Where(s => s.StartLocal.Date == date.Date ||
+                    (s.StartLocal < date.AddDays(1) && s.EndLocal > date && s.StartLocal < date)).ToList();
+                <section class="schedule-day @(closed ? "closed" : "")" data-target-date="@day.ToString("yyyy-MM-dd")" aria-label="@day.ToString("dddd dd MMM yyyy") schedule">
+                    <div class="day-heading">@day.ToString("ddd dd MMM")</div>
+                    <div class="day-hours">
+                        @if (closed) { <span class="text-muted">Closed</span> }
+                        else { <span>@hrs!.OpeningTime.ToString("HH:mm") – @hrs.ClosingTime.ToString("HH:mm") @(hrs.ClosingTime < hrs.OpeningTime ? "(+1 day)" : "")</span> }
+                    </div>
+                    @foreach (var shift in shifts)
+                    {
+                        <div class="shift-block @(shift.Role == "Kitchen Staff" ? "kitchen" : "")" draggable="true" tabindex="0"
+                             data-drag-kind="shift" data-shift-id="@shift.Id"
+                             title="Drag to change day; edit for exact hours">
+                            <strong class="small d-block text-truncate">@shift.FullName</strong>
+                            <div class="times">@shift.StartLocal.ToString("ddd HH:mm") – @shift.EndLocal.ToString("ddd HH:mm")</div>
+                            <div class="small text-muted">@shift.Role</div>
+                            <div class="shift-actions">
+                                <button type="button" class="edit-shift" data-id="@shift.Id" data-staff="@shift.StaffUserId"
+                                        data-date="@shift.StartLocal.ToString("yyyy-MM-dd")" data-start="@shift.StartLocal.ToString("HH:mm")"
+                                        data-end="@shift.EndLocal.ToString("HH:mm")" data-notes="@shift.Notes">Edit</button>
+                                <form method="post" asp-page-handler="Delete" asp-route-week="@Model.CurrentMonday.ToString("yyyy-MM-dd")"
+                                      onsubmit="return confirm('Remove this shift?');">
+                                    <input type="hidden" name="shiftId" value="@shift.Id" />
+                                    <button type="submit" class="danger">Remove</button>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                    @if (shifts.Count == 0) { <div class="text-muted small mt-3">Drop staff here</div> }
+                </section>
+            }
+        </div>
+    </div>
+</div>
+
+<form method="post" asp-page-handler="Drop" id="dragForm" hidden>
+    <input name="week" value="@Model.CurrentMonday.ToString("yyyy-MM-dd")" />
+    <input name="shiftId" id="dragShiftId" value="0" />
+    <input name="staffId" id="dragStaffId" value="0" />
+    <input name="targetDate" id="dragTargetDate" />
+    <input name="startTime" id="dragStartTime" />
+    <input name="endTime" id="dragEndTime" />
+</form>
+
+<div class="modal fade" id="shiftModal" tabindex="-1" aria-labelledby="shiftModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="shiftModalTitle">Add staff shift</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Save" asp-route-week="@Model.CurrentMonday.ToString("yyyy-MM-dd")">
+                <div class="modal-body">
+                    <input asp-for="Form.ShiftId" type="hidden" id="formShiftId" />
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="formStaff">Staff member</label>
+                        <select asp-for="Form.StaffUserId" id="formStaff" class="form-select" required>
+                            <option value="0">Choose a staff member</option>
+                            @foreach (var person in Model.Board.Staff)
+                            { <option value="@person.Id">@person.FullName (@person.Role)</option> }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Form.WorkDate" class="form-label fw-semibold">Start date (local)</label>
+                        <input asp-for="Form.WorkDate" id="formDate" class="form-control" type="date" required />
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label asp-for="Form.StartTime" class="form-label fw-semibold">Start</label>
+                            <input asp-for="Form.StartTime" id="formStart" class="form-control" type="time" required />
+                        </div>
+                        <div class="col-6">
+                            <label asp-for="Form.EndTime" class="form-label fw-semibold">End</label>
+                            <input asp-for="Form.EndTime" id="formEnd" class="form-control" type="time" required />
+                        </div>
+                    </div>
+                    <div class="form-text">An end time before the start time means the following day.</div>
+                    <div class="mt-3">
+                        <label asp-for="Form.Notes" class="form-label fw-semibold">Notes (optional)</label>
+                        <textarea asp-for="Form.Notes" id="formNotes" class="form-control" rows="2" maxlength="300"></textarea>
+                    </div>
+                    <p class="text-muted small mt-3 mb-0">The server enforces opening hours, overlaps, rest periods, shift length and weekly limits.</p>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn orange-btn">Save shift</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+@section Scripts {
+<script>
+(() => {
+    const modalElement = document.getElementById('shiftModal');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+    const setForm = (id, staff, date, start, end, notes) => {
+        document.getElementById('formShiftId').value = id;
+        document.getElementById('formStaff').value = staff;
+        document.getElementById('formDate').value = date;
+        document.getElementById('formStart').value = start;
+        document.getElementById('formEnd').value = end;
+        document.getElementById('formNotes').value = notes;
+        document.getElementById('shiftModalTitle').textContent = id ? 'Edit staff shift' : 'Add staff shift';
+    };
+    document.getElementById('addShiftButton').addEventListener('click', () =>
+        setForm(0, 0, '@first.ToString("yyyy-MM-dd")', '10:00', '18:00', ''));
+    document.querySelectorAll('.edit-shift').forEach(b => b.addEventListener('click', () => {
+        setForm(b.dataset.id, b.dataset.staff, b.dataset.date, b.dataset.start, b.dataset.end, b.dataset.notes || '');
+        modal.show();
+    }));
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <text>modal.show();</text>
+    }
+
+    document.querySelectorAll('[data-drag-kind]').forEach(el => el.addEventListener('dragstart', e => {
+        const kind = el.dataset.dragKind;
+        e.dataTransfer.setData('text/plain', kind + ':' + (kind === 'shift' ? el.dataset.shiftId : el.dataset.staffId));
+        e.dataTransfer.effectAllowed = 'move';
+    }));
+    document.querySelectorAll('.schedule-day').forEach(day => {
+        day.addEventListener('dragover', e => { e.preventDefault(); day.classList.add('drop-target'); });
+        day.addEventListener('dragleave', () => day.classList.remove('drop-target'));
+        day.addEventListener('drop', e => {
+            e.preventDefault();
+            day.classList.remove('drop-target');
+            const [kind, id] = (e.dataTransfer.getData('text/plain') || '').split(':');
+            if (!['shift', 'staff'].includes(kind) || !/^\d+$/.test(id)) return;
+            const quickStart = document.getElementById('quickStart').value;
+            const quickEnd = document.getElementById('quickEnd').value;
+            if (!quickStart || !quickEnd) { alert('Choose drag-to-create times first.'); return; }
+            document.getElementById('dragShiftId').value = kind === 'shift' ? id : 0;
+            document.getElementById('dragStaffId').value = kind === 'staff' ? id : 0;
+            document.getElementById('dragTargetDate').value = day.dataset.targetDate;
+            document.getElementById('dragStartTime').value = quickStart;
+            document.getElementById('dragEndTime').value = quickEnd;
+            document.getElementById('dragForm').requestSubmit();
+        });
+    });
+})();
+</script>
+}

@@ -33,6 +33,21 @@ public sealed class ReservationService : IReservationService
                 t.DiningArea!.Name, t.Status))
             .ToListAsync();
 
+    public async Task<TableAvailabilityResult> CheckAvailabilityAsync(
+        DateTime startLocal, int durationMinutes, int partySize, bool forCustomer = false)
+    {
+        var problem = await ValidateSlotAsync(startLocal, durationMinutes, partySize, forCustomer);
+        if (problem is not null) return new TableAvailabilityResult(problem, []);
+        var startUtc = ReservationClock.ToUtc(startLocal);
+        var hours = await LoadHoursAsync();
+        if (!OpeningHoursPolicy.IsWithinHours(startLocal,
+            ReservationClock.ToLocal(startUtc.AddMinutes(durationMinutes)), hours))
+            return new TableAvailabilityResult(
+                "Your booking would extend beyond opening hours. Choose an earlier start time or shorter duration.", []);
+        var tables = await FindAvailableTablesAsync(startLocal, durationMinutes, partySize, forCustomer);
+        return new TableAvailabilityResult(null, tables);
+    }
+
     public async Task<IReadOnlyList<ReservationTableOption>> FindAvailableTablesAsync(
         DateTime startLocal, int durationMinutes, int partySize, bool forCustomer = false)
     {

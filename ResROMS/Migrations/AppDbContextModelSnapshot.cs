@@ -516,6 +516,44 @@ namespace ResROMS.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ResROMS.Models.StaffShift", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("EndLocal")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("StaffUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartLocal")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StaffUserId", "StartLocal", "EndLocal");
+
+                    b.ToTable("StaffShifts", t =>
+                        {
+                            t.HasCheckConstraint("CK_StaffShifts_Interval", "[EndLocal] > [StartLocal]");
+                        });
+                });
+
             modelBuilder.Entity("ResROMS.Models.SystemSetting", b =>
                 {
                     b.Property<int>("Id")
@@ -531,10 +569,25 @@ namespace ResROMS.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(90);
 
+                    b.Property<int>("MaximumShiftHours")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(12);
+
+                    b.Property<int>("MaximumWeeklyHours")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(60);
+
                     b.Property<int>("MinimumBookingNoticeMinutes")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValue(15);
+
+                    b.Property<int>("MinimumRestHours")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(8);
 
                     b.Property<DateTime>("UpdatedUtc")
                         .HasColumnType("datetime2");
@@ -547,7 +600,13 @@ namespace ResROMS.Migrations
 
                             t.HasCheckConstraint("CK_SystemSettings_MinNotice", "[MinimumBookingNoticeMinutes] BETWEEN 0 AND 1440");
 
+                            t.HasCheckConstraint("CK_SystemSettings_RestMin", "[MinimumRestHours] BETWEEN 0 AND 24");
+
+                            t.HasCheckConstraint("CK_SystemSettings_ShiftMax", "[MaximumShiftHours] BETWEEN 1 AND 16");
+
                             t.HasCheckConstraint("CK_SystemSettings_Singleton", "[Id] = 1");
+
+                            t.HasCheckConstraint("CK_SystemSettings_WeeklyMax", "[MaximumWeeklyHours] BETWEEN 8 AND 80");
                         });
                 });
 
@@ -746,6 +805,17 @@ namespace ResROMS.Migrations
                     b.Navigation("Customer");
 
                     b.Navigation("Table");
+                });
+
+            modelBuilder.Entity("ResROMS.Models.StaffShift", b =>
+                {
+                    b.HasOne("ResROMS.Models.User", "StaffUser")
+                        .WithMany()
+                        .HasForeignKey("StaffUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("StaffUser");
                 });
 
             modelBuilder.Entity("ResROMS.Models.Table", b =>
