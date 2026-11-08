@@ -1,0 +1,113 @@
+@page
+@using System.Globalization
+@model ResROMS.Pages.Staff.MyScheduleModel
+@{
+    ViewData["Title"] = "My Schedule";
+    var today = DateOnly.FromDateTime(ResROMS.Services.ReservationClock.NowLocal);
+}
+@section Styles {
+<style>
+    .shift-title { font-size:1.9rem; font-weight:800; color:#243146; margin:0; }
+    .shift-toolbar { background:#fff; border:1px solid #e7edf3; padding:18px 22px; border-radius:16px; box-shadow:0 4px 20px #16283d0a; }
+    .shift-stat { background:#fff; border:1px solid #e6edf3; padding:17px 21px; border-radius:15px; flex:1; min-width:160px; }
+    .shift-stat strong { display:block; font-size:1.5rem; color:#23344b; }
+    .shift-stat small { color:#63748b; }
+    .shift-stat i { color:#d85d21; }
+    .week-wrap { background:white; border:1px solid #e2e9f0; border-radius:16px; overflow:hidden; box-shadow:0 7px 28px #18283e0d; }
+    .week-scroller { overflow-x:auto; }
+    .week-grid { min-width:1060px; display:grid; grid-template-columns:78px repeat(7,minmax(136px,1fr)); }
+    .time-heading { background:#17273b; }
+    .day-heading { background:#17273b; color:white; padding:15px 6px; text-align:center; border-left:1px solid #324156; }
+    .day-heading strong { display:block; font-size:.96rem; }
+    .day-heading span { color:#c6d0dd; font-size:.79rem; }
+    .day-heading.today { background:#a64718; }
+    .time-rail { position:relative; border-right:1px solid #e4eaf1; background:#fafbfc; }
+    .time-label { position:absolute; right:11px; transform:translateY(-50%); font-size:.71rem; font-weight:650; color:#8490a0; white-space:nowrap; }
+    .day-lane { position:relative; border-left:1px solid #e5eaf0; background:repeating-linear-gradient(to bottom,#fff 0,#fff 51px,#e9eef4 51px,#e9eef4 52px); }
+    .day-lane.today { background:repeating-linear-gradient(to bottom,#fffbf6 0,#fffbf6 51px,#f1e5d8 51px,#f1e5d8 52px); }
+    .shift-block { position:absolute; left:5px; right:5px; z-index:1; padding:7px 9px; overflow:hidden; background:linear-gradient(145deg,#d65723,#e9873e); color:white; border-left:3px solid #96300e; border-radius:9px; box-shadow:0 4px 10px #a9552a30; font-size:.76rem; }
+    .shift-block.continuation { background:linear-gradient(145deg,#375f9a,#5185be); border-left-color:#254c84; }
+    .shift-block strong { display:block; line-height:1.3; }
+    .shift-block .shift-notes { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; opacity:.95; margin-top:4px; }
+    .shift-empty { text-align:center; padding:18px; color:#768596; font-size:.84rem; }
+    .shift-list { background:#fff; border-radius:14px; border:1px solid #e5ecf3; overflow:hidden; }
+    .shift-list th { font-size:.82rem; color:#61748b; }
+    @@media(max-width:650px) { .shift-title {font-size:1.5rem;} .shift-toolbar {padding:14px;} .shift-stat {min-width:130px;} }
+</style>
+}
+<div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-4">
+    <div>
+        <h1 class="shift-title"><i class="bi bi-calendar-week me-2 text-warning"></i>My Weekly Schedule</h1>
+        <p class="text-muted mb-0">Your confirmed work shifts in Malaysia time (MYT). Read-only; Admin manages assignments.</p>
+    </div>
+    <a asp-page="/Staff/MySchedule" class="btn btn-outline-secondary"><i class="bi bi-calendar-event me-1"></i> Current week</a>
+</div>
+<div class="shift-toolbar d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+    <div class="d-flex align-items-center gap-2">
+        <a class="btn btn-outline-secondary" asp-page="/Staff/MySchedule" asp-route-week="@Model.PreviousMonday.ToString("yyyy-MM-dd")" aria-label="Previous week"><i class="bi bi-chevron-left"></i></a>
+        <div class="text-center px-2"><strong>@Model.Monday.ToString("dd MMM") – @Model.Monday.AddDays(6).ToString("dd MMM yyyy")</strong><div class="small text-muted">Monday to Sunday</div></div>
+        <a class="btn btn-outline-secondary" asp-page="/Staff/MySchedule" asp-route-week="@Model.NextMonday.ToString("yyyy-MM-dd")" aria-label="Next week"><i class="bi bi-chevron-right"></i></a>
+    </div>
+    <span class="badge bg-light text-dark border">Drag horizontally on small screens to view all 7 days</span>
+</div>
+<div class="d-flex flex-wrap gap-3 mb-4">
+    <div class="shift-stat"><small><i class="bi bi-clock me-1"></i>Scheduled hours</small><strong>@Model.WeeklyHours.ToString("0.#") h</strong></div>
+    <div class="shift-stat"><small><i class="bi bi-calendar-check me-1"></i>Assigned shifts</small><strong>@Model.Shifts.Count</strong></div>
+    <div class="shift-stat"><small><i class="bi bi-calendar-range me-1"></i>Week starting</small><strong>@Model.Monday.ToString("dd MMM")</strong></div>
+</div>
+<div class="week-wrap mb-4">
+    <div class="week-scroller" role="region" aria-label="Weekly shift timetable" tabindex="0">
+        <div class="week-grid">
+            <div class="time-heading"></div>
+            @foreach (var day in Model.Days)
+            {
+                <div class="day-heading @(day.Date == today ? "today" : "")">
+                    <strong>@day.Date.ToString("ddd")</strong><span>@day.Date.ToString("dd MMM")</span>
+                </div>
+            }
+            <div class="time-rail" style="height:@(Model.GridHeightPx)px">
+                @foreach (var hour in Model.Hours)
+                {
+                    var clock = hour == 24 ? "12 AM" : new DateTime(2000, 1, 1).AddHours(hour).ToString("h tt", CultureInfo.InvariantCulture);
+                    <span class="time-label" style="top:@((hour - Model.GridStartHour) * 52)px">@clock</span>
+                }
+            </div>
+            @foreach (var day in Model.Days)
+            {
+                <div class="day-lane @(day.Date == today ? "today" : "")" style="height:@(Model.GridHeightPx)px">
+                    @foreach (var shift in day.Blocks)
+                    {
+                        <div class="shift-block @(shift.ContinuesFromPriorDay ? "continuation" : "")"
+                             style="top:@(shift.TopPixels.ToString("0.#", CultureInfo.InvariantCulture))px;height:@(shift.HeightPixels.ToString("0.#", CultureInfo.InvariantCulture))px"
+                             title="@shift.StartLocal.ToString("ddd h:mm tt") – @shift.EndLocal.ToString("ddd h:mm tt") @(shift.Notes)">
+                            <strong>@shift.StartLocal.ToString("h:mm tt") – @shift.EndLocal.ToString("h:mm tt")</strong>
+                            @if (shift.ContinuesFromPriorDay) { <span>↳ continues</span> }
+                            @if (shift.ContinuesToNextDay) { <span>↪ next day</span> }
+                            @if (!string.IsNullOrWhiteSpace(shift.Notes)) { <div class="shift-notes">@shift.Notes</div> }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+    @if (!Model.Shifts.Any())
+    {
+        <div class="shift-empty"><i class="bi bi-calendar-x me-1"></i> No shifts assigned for this week. Check a different week or contact Admin.</div>
+    }
+</div>
+<details class="shift-list mb-3">
+    <summary class="p-3 fw-semibold" style="cursor:pointer"><i class="bi bi-list-ul me-2"></i>View shifts as a detailed list</summary>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light"><tr><th>Start</th><th>End</th><th>Duration</th><th>Notes</th></tr></thead>
+            <tbody>
+                @foreach (var shift in Model.Shifts)
+                {
+                    <tr><td>@shift.StartLocal.ToString("ddd, dd MMM h:mm tt")</td><td>@shift.EndLocal.ToString("ddd, dd MMM h:mm tt")</td><td>@((shift.EndLocal-shift.StartLocal).TotalHours.ToString("0.#")) h</td><td>@(string.IsNullOrWhiteSpace(shift.Notes) ? "—" : shift.Notes)</td></tr>
+                }
+                @if (!Model.Shifts.Any()) { <tr><td colspan="4">No assignments this week.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+</details>
+<p class="small text-muted"><i class="bi bi-info-circle me-1"></i>Overnight shifts appear in both calendar days. The timetable clips at week boundaries; the detailed list shows the complete shift times. Refresh to see Administrator updates.</p>

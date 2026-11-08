@@ -40,7 +40,9 @@ public class LoginModel : PageModel
         if (User.Identity?.IsAuthenticated == true)
         {
             if (User.IsInRole("Admin")) return RedirectToPage("/Admin/Dashboard");
-            if (User.IsInRole("Customer")) return RedirectToPage("/Customer/Reservations");
+            if (User.IsInRole("Customer")) return RedirectToPage("/Customer/Dashboard");
+            if (User.IsInRole("Waiter")) return RedirectToPage("/Staff/Orders");
+            if (User.IsInRole("Kitchen Staff")) return RedirectToPage("/Staff/Kitchen");  //if staff already logged in, go straight to orders page
         }
         return Page();
     }
@@ -95,7 +97,9 @@ public class LoginModel : PageModel
         return user.Role switch
         {
             "Admin" => RedirectToPage("/Admin/Dashboard"),
-            "Customer" => RedirectToPage("/Customer/Reservations"),
+            "Customer" => RedirectToPage("/Customer/Dashboard"),
+            "Waiter" => RedirectToPage("/Staff/Orders"),
+            "Kitchen Staff" => RedirectToPage("/Staff/Kitchen"),  //after login, staff goes to orders page
             _ => RedirectToPage("/AccessDenied")
         };
     }

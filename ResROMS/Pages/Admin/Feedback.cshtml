@@ -1,0 +1,61 @@
+@page "/Admin/Feedback"
+@model ResROMS.Pages.Admin.FeedbackModel
+@using ResROMS.Services
+@{
+    ViewData["Title"] = "Customer Feedback";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h1 class="fw-bold fs-2 mb-0">Customer feedback</h1>
+    <form method="get" class="d-flex gap-2">
+        <select name="rating" class="form-select">
+            <option value="">All ratings</option>
+            @for (int i = 5; i >= 1; i--) { <option value="@i" selected="@(Model.Rating == i)">@i star@(i == 1 ? "" : "s")</option> }
+        </select>
+        <button class="btn btn-dark">Filter</button>
+    </form>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 h-100">
+            <div class="text-muted small fw-bold">AVERAGE RATING</div>
+            <div class="fs-2 fw-bold">@(Model.Total == 0 ? "-" : Model.Average.ToString("0.0") + " / 5")</div>
+            <div class="text-muted small">@Model.Total review(s)</div>
+        </div>
+    </div>
+    <div class="col-md-9">
+        <div class="card border-0 shadow-sm p-3 h-100">
+            @for (int i = 5; i >= 1; i--)
+            {
+                var pct = Model.Total == 0 ? 0 : Model.PerStar[i] * 100 / Model.Total;
+                <div class="d-flex align-items-center gap-2 small mb-1">
+                    <span style="width:48px">@i star@(i == 1 ? "" : "s")</span>
+                    <div class="progress flex-grow-1" style="height:10px"><div class="progress-bar bg-warning" style="width:@pct%"></div></div>
+                    <span style="width:32px" class="text-end">@Model.PerStar[i]</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="table-light"><tr><th>Date</th><th>Customer</th><th>About</th><th>Rating</th><th>Comment</th></tr></thead>
+            <tbody>
+                @foreach (var f in Model.Items)
+                {
+                    <tr>
+                        <td class="text-nowrap">@ReservationClock.ToLocal(f.CreatedUtc).ToString("d MMM yyyy, h:mm tt")</td>
+                        <td>@f.Customer.FullName</td>
+                        <td>@(f.OrderId.HasValue ? "Order #" + f.OrderId : "Reservation #" + f.ReservationId)</td>
+                        <td class="text-warning text-nowrap">@(new string('★', f.Rating))@(new string('☆', 5 - f.Rating))</td>
+                        <td>@f.Comment</td>
+                    </tr>
+                }
+                @if (!Model.Items.Any()) { <tr><td colspan="5" class="text-muted p-4">No feedback yet.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,81 @@
+@page "/Customer/Dashboard"
+@model ResROMS.Pages.Customer.DashboardModel
+@using ResROMS.Services.CustomerSide
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "_CustomerLayout";
+    var first = (Model.FullName ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "there";
+}
+
+<div class="p-4 rounded-4 text-white mb-4" style="background:linear-gradient(135deg,#e85d04,#fca311)">
+    <h1 class="h3 fw-bold mb-1">Welcome back, @first!</h1>
+    <p class="mb-0">Browse the menu, book a table, or order food online.</p>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4"><a href="/Customer/Reservations" class="text-decoration-none text-dark"><div class="panel py-3"><div class="text-muted small fw-bold">UPCOMING RESERVATIONS</div><div class="fs-2 fw-bold">@Model.UpcomingReservations</div></div></a></div>
+    <div class="col-6 col-md-4"><a href="/Customer/Orders" class="text-decoration-none text-dark"><div class="panel py-3"><div class="text-muted small fw-bold">ACTIVE ORDERS</div><div class="fs-2 fw-bold">@Model.ActiveOrders</div></div></a></div>
+    <div class="col-12 col-md-4"><a href="/Customer/Notifications" class="text-decoration-none text-dark"><div class="panel py-3"><div class="text-muted small fw-bold">NEW NOTIFICATIONS</div><div class="fs-2 fw-bold">@Model.UnreadNotifications</div></div></a></div>
+</div>
+
+@if (Model.Announcements.Count > 0 || Model.Offers.Count > 0)
+{
+    <div class="row g-3 mb-4">
+        @foreach (var a in Model.Announcements)
+        {
+            <div class="col-md-6"><div class="panel py-3 h-100"><span class="badge text-bg-info mb-1">Announcement</span><div class="fw-bold">@a.Title</div><div class="small text-muted">@(a.Body.Length > 160 ? a.Body[..160] + "…" : a.Body)</div></div></div>
+        }
+        @foreach (var c in Model.Offers)
+        {
+            <div class="col-md-6">
+                <div class="panel py-3 h-100">
+                    <span class="badge text-bg-warning mb-1">Offer</span>
+                    <div class="fw-bold">@c.Name @if (!string.IsNullOrWhiteSpace(c.PromoCode)) { <code class="ms-1">@c.PromoCode</code> }</div>
+                    <div class="small text-muted">@c.Description</div>
+                    <div class="small text-muted">Until @c.EndDate.ToString("d MMM yyyy")</div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<h2 class="h5 fw-bold mb-3">Recommended for you <span class="text-muted fw-normal small">&middot; @Model.Recommendations.Reason</span></h2>
+<div class="row g-3 mb-4">
+    @foreach (var m in Model.Recommendations.ForYou)
+    {
+        <div class="col-6 col-lg-3">
+            <div class="panel p-3 h-100">
+                <partial name="_FoodImage" model="new FoodImageView(m.ImageUrl, m.Name)" />
+                <div class="fw-bold">@m.Name</div>
+                <div class="small text-muted mb-2">@m.Description</div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="price">@CustomerUi.Money(m.Price)</span>
+                    @if (!string.IsNullOrWhiteSpace(m.DietaryTag)) { <span class="badge text-bg-warning">@m.DietaryTag</span> }
+                </div>
+            </div>
+        </div>
+    }
+    @if (Model.Recommendations.ForYou.Count == 0) { <div class="text-muted">No dishes available right now.</div> }
+</div>
+
+<h2 class="h5 fw-bold mb-3">Popular right now</h2>
+<div class="row g-3 mb-4">
+    @foreach (var m in Model.Recommendations.Popular)
+    {
+        <div class="col-6 col-lg-3">
+            <div class="panel p-3 h-100">
+                <partial name="_FoodImage" model="new FoodImageView(m.ImageUrl, m.Name)" />
+                <div class="fw-bold">@m.Name</div>
+                <div class="small text-muted mb-2">@m.Category?.Name</div>
+                <span class="price">@CustomerUi.Money(m.Price)</span>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="row g-3">
+    <div class="col-6 col-lg-3"><a href="/Customer/Reservations" class="btn primary-action w-100 py-3">Book a table</a></div>
+    <div class="col-6 col-lg-3"><a href="/Customer/Order" class="btn primary-action w-100 py-3">Order online</a></div>
+    <div class="col-6 col-lg-3"><a href="/Customer/History" class="btn btn-outline-dark w-100 py-3">History &amp; payments</a></div>
+    <div class="col-6 col-lg-3"><a href="/Customer/Feedback" class="btn btn-outline-dark w-100 py-3">Rate your visits</a></div>
+</div>

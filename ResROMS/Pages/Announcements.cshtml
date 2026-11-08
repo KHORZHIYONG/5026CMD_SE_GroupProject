@@ -2,12 +2,14 @@
 @model ResROMS.Pages.AnnouncementsModel
 @{
     ViewData["Title"] = "Announcements";
-    Layout = "_Layout";
+    Layout = User.IsInRole("Admin") ? "_AdminLayout"
+        : (User.IsInRole("Waiter") || User.IsInRole("Kitchen Staff") || User.IsInRole("Staff"))
+            ? "/Pages/Staff/_StaffLayout.cshtml" : "_CustomerLayout";
 }
-<div class="container py-5">
+<div class="py-3">
     <div class="d-flex justify-content-between align-items-center mb-4 gap-3">
         <div><h1 class="fw-bold">Restaurant Announcements</h1><p class="text-muted">Current notices from ResROMS.</p></div>
-        <a href="/" class="btn btn-outline-secondary">Back</a>
+        <a href="@(User.IsInRole("Admin") ? "/Admin/Announcements" : (User.IsInRole("Customer") ? "/Customer/Dashboard" : "/Staff/Orders"))" class="btn btn-outline-secondary">Back</a>
     </div>
     @if (Model.Posts.Count == 0)
     {

@@ -1,0 +1,113 @@
+@page "/Customer/Order"
+@model ResROMS.Pages.Customer.OrderModel
+@using ResROMS.Services.CustomerSide
+@{
+    ViewData["Title"] = "Order Online";
+    Layout = "_CustomerLayout";
+}
+
+@section Styles {
+    <style>
+        .item-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid #edf2f7; }
+        .item-row:last-child { border-bottom: none; }
+        .qty { width: 80px; }
+        .category-heading { font-weight: 700; margin: 22px 0 6px; border-left: 4px solid #e85d04; padding-left: 10px; }
+        .summary { position: sticky; top: 20px; }
+    </style>
+}
+
+<h1 class="page-title h2 mb-3">Order online</h1>
+
+<form method="post">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="panel">
+                @if (!Model.Categories.Any()) { <p class="text-muted mb-0">No dishes are available right now.</p> }
+                @foreach (var cat in Model.Categories)
+                {
+                    <h2 class="category-heading h5">@cat.Name</h2>
+                    @foreach (var item in cat.MenuItems.OrderBy(m => m.Name))
+                    {
+                        <div class="item-row">
+                            <partial name="_FoodImage" model="new FoodImageView(item.ImageUrl, item.Name, true)" />
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">@item.Name @if (!string.IsNullOrWhiteSpace(item.DietaryTag)) { <span class="badge text-bg-warning ms-1">@item.DietaryTag</span> }</div>
+                                <div class="small text-muted">@item.Description</div>
+                            </div>
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="price text-nowrap">@CustomerUi.Money(item.Price)</span>
+                                <input type="number" class="form-control qty js-qty" name="Qty[@item.Id]" value="0" min="0" max="99"
+                                       data-price="@item.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="panel summary">
+                <h2 class="h5 fw-bold mb-3">Your order</h2>
+                @if (Model.MyReservations.Count > 0)
+                {
+                    <div class="mb-3">
+                        <label class="form-label">Link to a reservation</label>
+                        <select name="ReservationId" id="reservationId" class="form-select">
+                            <option value="">No, order without a reservation</option>
+                            @foreach (var r in Model.MyReservations)
+                            {
+                                <option value="@r.Id" selected="@(Model.ReservationId == r.Id)">@CustomerUi.Local(r.StartUtc) &middot; table @r.Table.TableNumber</option>
+                            }
+                        </select>
+                        <div class="form-text">The order is served at your reserved table.</div>
+                    </div>
+                }
+                <div id="typeBox" class="mb-3">
+                    <label class="form-label">Order type</label>
+                    <select name="OrderType" id="orderType" class="form-select">
+                        <option value="Dine-in" selected="@(Model.OrderType == "Dine-in")">Dine-in (served at my table)</option>
+                        <option value="Takeaway" selected="@(Model.OrderType == "Takeaway")">Takeaway</option>
+                    </select>
+                </div>
+                <div class="mb-3" id="tableBox">
+                    <label class="form-label">Your table</label>
+                    <select name="TableId" class="form-select">
+                        <option value="">Select table...</option>
+                        @foreach (var t in Model.Tables) { <option value="@t.Id" selected="@(Model.TableId == t.Id)">@t.Label</option> }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" asp-for="PromoCode">Promotion code (optional)</label>
+                    <input class="form-control" asp-for="PromoCode" maxlength="24" placeholder="e.g. LUNCH10" autocomplete="off" />
+                    <div class="form-text">Discounts are validated at checkout. The displayed estimate is before discounts.</div>
+                </div>
+                <div class="d-flex justify-content-between fs-5 fw-bold mb-2"><span>Total</span><span id="total">RM 0.00</span></div>
+                <p class="small text-muted">After ordering, choose a payment method on My Orders. Staff will confirm payment when it is actually received.</p>
+                <button type="submit" class="btn primary-action w-100 fw-bold">Place order</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        const qtys = document.querySelectorAll('.js-qty');
+        const orderType = document.getElementById('orderType');
+        function recalc() {
+            let total = 0;
+            qtys.forEach(q => total += (parseInt(q.value) || 0) * parseFloat(q.dataset.price));
+            document.getElementById('total').textContent = 'RM ' + total.toFixed(2);
+        }
+        const reservation = document.getElementById('reservationId');
+        function toggleTable() {
+            const linked = reservation && reservation.value !== '';
+            document.getElementById('typeBox').style.display = linked ? 'none' : '';
+            document.getElementById('tableBox').style.display = (!linked && orderType.value === 'Dine-in') ? '' : 'none';
+        }
+        if (reservation) reservation.addEventListener('change', toggleTable);
+        qtys.forEach(q => q.addEventListener('input', recalc));
+        orderType.addEventListener('change', toggleTable);
+        toggleTable();
+    </script>
+}

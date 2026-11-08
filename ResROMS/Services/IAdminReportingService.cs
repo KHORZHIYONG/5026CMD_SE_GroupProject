@@ -1,6 +1,6 @@
 namespace ResROMS.Services;
 
-public sealed record ReportRange(DateOnly From, DateOnly To, string GroupBy);
+public sealed record ReportRange(DateOnly From, DateOnly To, string GroupBy, int? CategoryId = null);
 public sealed record ReportTrend(string Label, decimal NetCollected, int Reservations, int Orders);
 public sealed record MenuPopularity(int MenuItemId, string Name, int Quantity, decimal OrderValue);
 public sealed record StatusBreakdown(string Status, int Count);

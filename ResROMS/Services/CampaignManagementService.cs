@@ -37,7 +37,7 @@ public sealed class CampaignManagementService : ICampaignManagementService
         var validation = Validate(input);
         if (validation is not null) return Fail(validation);
         var code = NormalizeCode(input.PromoCode);
-        if (code is not null && await _db.Campaigns.AnyAsync(c => c.PromoCode == code))
+        if (code is not null && await _db.Campaigns.AnyAsync(c => c.PromoCode != null && c.PromoCode.ToUpper() == code))
             return Fail("This promotion code is already used by another campaign.");
 
         var now = DateTime.UtcNow;
@@ -59,7 +59,7 @@ public sealed class CampaignManagementService : ICampaignManagementService
         var campaign = await _db.Campaigns.FindAsync(id);
         if (campaign is null) return Fail("Campaign not found.");
         var code = NormalizeCode(input.PromoCode);
-        if (code is not null && await _db.Campaigns.AnyAsync(c => c.Id != id && c.PromoCode == code))
+        if (code is not null && await _db.Campaigns.AnyAsync(c => c.Id != id && c.PromoCode != null && c.PromoCode.ToUpper() == code))
             return Fail("This promotion code is already used by another campaign.");
 
         Apply(campaign, input, code);

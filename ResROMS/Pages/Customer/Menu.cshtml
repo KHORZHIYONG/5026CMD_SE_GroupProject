@@ -1,0 +1,61 @@
+@page "/Customer/Menu"
+@model ResROMS.Pages.Customer.MenuModel
+@using ResROMS.Services.CustomerSide
+@{
+    ViewData["Title"] = "Menu";
+    Layout = "_CustomerLayout";
+}
+
+@section Styles {
+    <style>
+        .menu-card.unavailable { opacity: .6; }
+        .menu-img { height: 150px; background: #edf2f7 center/cover no-repeat; display: flex; align-items: center; justify-content: center; color: #a0aec0; font-size: 2.5rem; border-radius: 12px; margin-bottom: 12px; }
+        .category-heading { font-weight: 700; margin: 28px 0 14px; border-left: 4px solid #e85d04; padding-left: 10px; }
+    </style>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="page-title h2 mb-0">Our menu</h1>
+    <a href="/Customer/Order" class="btn primary-action">Order online</a>
+</div>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-4"><input asp-for="Search" class="form-control" placeholder="Search dishes..." /></div>
+    <div class="col-md-3">
+        <select asp-for="CategoryId" class="form-select" asp-items="@(new SelectList(Model.Categories, "Id", "Name"))"><option value="">All categories</option></select>
+    </div>
+    <div class="col-md-2">
+        <select asp-for="Dietary" class="form-select" asp-items="@(new SelectList(Model.DietaryTags))"><option value="">Any diet</option></select>
+    </div>
+    <div class="col-md-2 d-flex align-items-center">
+        <div class="form-check"><input asp-for="AvailableOnly" class="form-check-input" /><label asp-for="AvailableOnly" class="form-check-label">Available only</label></div>
+    </div>
+    <div class="col-md-1"><button class="btn btn-dark w-100">Go</button></div>
+</form>
+
+@if (!Model.Items.Any()) { <div class="alert alert-light border">No dishes match your search.</div> }
+
+@foreach (var group in Model.Items.GroupBy(i => i.Category?.Name ?? "Other"))
+{
+    <h2 class="category-heading h5">@group.Key</h2>
+    <div class="row g-3">
+        @foreach (var item in group)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="panel p-3 h-100 menu-card @(item.IsAvailable ? "" : "unavailable")">
+                    <partial name="_FoodImage" model="new FoodImageView(item.ImageUrl, item.Name)" />
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="fw-bold">@item.Name</div>
+                        <span class="price">@CustomerUi.Money(item.Price)</span>
+                    </div>
+                    <p class="text-muted small mt-1">@item.Description</p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        @if (item.IsAvailable) { <span class="badge text-bg-success">Available</span> }
+                        else { <span class="badge text-bg-secondary">Unavailable</span> }
+                        @if (!string.IsNullOrWhiteSpace(item.DietaryTag)) { <span class="badge text-bg-warning">@item.DietaryTag</span> }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

@@ -10,6 +10,7 @@
     .analytics-value { font-size:1.55rem; font-weight:700; color:#272c33; }
     .analytics-hint { font-size:.82rem; color:#718096; }
     .data-table th { color:#607080; font-size:.86rem; }
+    .filter-explainer { background:#f5f8fb; border:1px solid #e1e8f0; border-radius:10px; padding:12px 15px; }
 </style>
 }
 <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4">
@@ -30,9 +31,16 @@
                 <option value="Monthly" selected="@(Model.Grouping == "Monthly")">Monthly</option>
             </select>
         </div>
-        <div class="col-md-3"><button class="btn btn-dark w-100" type="submit"><i class="bi bi-funnel me-1"></i> Apply Filters</button></div>
+        <div class="col-md-3"><input type="hidden" name="categoryId" value="@Model.CategoryId"/><button class="btn btn-dark w-100" type="submit"><i class="bi bi-funnel me-1"></i> Apply Filters</button></div>
     </form>
-    <div class="analytics-hint mt-2">Date range is limited to 366 days; dates refer to booking start, order placement, payment collection or refund date as relevant.</div>
+    <div class="filter-explainer small text-muted mt-3">
+        <strong>What does Group by mean?</strong> It controls the <em>Sales &amp; Operations Trend</em> rows only:
+        <strong>Daily</strong> = one row per date; <strong>Weekly</strong> = one row per Monday–Sunday week
+        (labelled by its Monday); <strong>Monthly</strong> = one row per calendar month.
+        The From/To dates are inclusive, use Malaysia time (MYT), and limit every report section.
+        Grouping does not change totals or the menu popularity ranking. The maximum range is 366 days.
+        Payment collection and refund dates are counted separately, so Net collected = Collected − Refunds.
+    </div>
 </div>
 @if (Model.ErrorMessage is not null)
 {
@@ -41,12 +49,11 @@
 else if (Model.Data is { } report)
 {
     <div class="row g-3 mb-4">
-        <div class="col-md-4 col-xl-2"><div class="card analytics-card p-3 h-100"><div class="analytics-label">Reservations</div><div class="analytics-value">@report.Reservations</div><div class="analytics-hint">Excludes cancelled</div></div></div>
-        <div class="col-md-4 col-xl-2"><div class="card analytics-card p-3 h-100"><div class="analytics-label">Orders</div><div class="analytics-value">@report.Orders</div><div class="analytics-hint">Excludes cancelled</div></div></div>
-        <div class="col-md-4 col-xl-2"><div class="card analytics-card p-3 h-100"><div class="analytics-label">Order value</div><div class="analytics-value">RM @report.OrderValue.ToString("N2")</div><div class="analytics-hint">Unpaid included; not revenue</div></div></div>
-        <div class="col-md-4 col-xl-2"><div class="card analytics-card p-3 h-100"><div class="analytics-label">Collected</div><div class="analytics-value">RM @report.CollectedPayments.ToString("N2")</div><div class="analytics-hint">Manual payment records</div></div></div>
-        <div class="col-md-4 col-xl-2"><div class="card analytics-card p-3 h-100"><div class="analytics-label">Refunds</div><div class="analytics-value">RM @report.RecordedRefunds.ToString("N2")</div><div class="analytics-hint">Marked refunded</div></div></div>
-        <div class="col-md-4 col-xl-2"><div class="card analytics-card p-3 h-100"><div class="analytics-label">Net collected</div><div class="analytics-value text-success">RM @report.NetCollected.ToString("N2")</div><div class="analytics-hint">Collected minus refunds</div></div></div>
+        <div class="col-sm-6 col-md-4 col-xl"><div class="card analytics-card p-3 h-100"><div class="analytics-label">Reservations</div><div class="analytics-value">@report.Reservations</div><div class="analytics-hint">Excludes cancelled</div></div></div>
+        <div class="col-sm-6 col-md-4 col-xl"><div class="card analytics-card p-3 h-100"><div class="analytics-label">Orders</div><div class="analytics-value">@report.Orders</div><div class="analytics-hint">Excludes cancelled</div></div></div>
+        <div class="col-sm-6 col-md-4 col-xl"><div class="card analytics-card p-3 h-100"><div class="analytics-label">Collected</div><div class="analytics-value">RM @report.CollectedPayments.ToString("N2")</div><div class="analytics-hint">Manual payment records</div></div></div>
+        <div class="col-sm-6 col-md-4 col-xl"><div class="card analytics-card p-3 h-100"><div class="analytics-label">Refunds</div><div class="analytics-value">RM @report.RecordedRefunds.ToString("N2")</div><div class="analytics-hint">Marked refunded</div></div></div>
+        <div class="col-sm-6 col-md-4 col-xl"><div class="card analytics-card p-3 h-100"><div class="analytics-label">Net collected</div><div class="analytics-value text-success">RM @report.NetCollected.ToString("N2")</div><div class="analytics-hint">Collected minus refunds</div></div></div>
     </div>
     <div class="row g-3 mb-4">
         <div class="col-md-6"><div class="card analytics-card p-3"><strong>New customer accounts</strong><span class="fs-4 fw-bold">@report.NewCustomers</span><small class="text-muted">Registered during selected dates</small></div></div>
@@ -58,8 +65,9 @@ else if (Model.Data is { } report)
                 <div class="d-flex justify-content-between flex-wrap gap-2 align-items-center mb-3">
                     <div><h5 class="fw-bold mb-1">Sales & Operations Trend</h5><div class="analytics-hint">Each row covers a local calendar period</div></div>
                     <div class="d-flex gap-2">
-                        <a class="btn btn-sm btn-outline-secondary" asp-page-handler="Export" asp-route-dataset="sales" asp-route-from="@Model.FromText" asp-route-to="@Model.ToText" asp-route-grouping="@Model.Grouping"><i class="bi bi-download me-1"></i> Sales CSV</a>
-                        <a class="btn btn-sm btn-outline-secondary" asp-page-handler="Export" asp-route-dataset="reservations" asp-route-from="@Model.FromText" asp-route-to="@Model.ToText" asp-route-grouping="@Model.Grouping">Reservations CSV</a>
+                        <a class="btn btn-sm btn-outline-success" asp-page-handler="Export" asp-route-dataset="sales" asp-route-from="@Model.FromText" asp-route-to="@Model.ToText" asp-route-grouping="@Model.Grouping" asp-route-format="xlsx"><i class="bi bi-file-earmark-excel me-1"></i> Sales Excel</a>
+                        <a class="btn btn-sm btn-outline-success" asp-page-handler="Export" asp-route-dataset="reservations" asp-route-from="@Model.FromText" asp-route-to="@Model.ToText" asp-route-grouping="@Model.Grouping" asp-route-format="xlsx">Reservations Excel</a>
+                        <a class="btn btn-sm btn-outline-secondary" asp-page-handler="Export" asp-route-dataset="sales" asp-route-from="@Model.FromText" asp-route-to="@Model.ToText" asp-route-grouping="@Model.Grouping">CSV</a>
                     </div>
                 </div>
                 <div class="table-responsive" style="max-height:430px;overflow-y:auto">
@@ -95,19 +103,37 @@ else if (Model.Data is { } report)
     </div>
     <div class="card analytics-card p-4 mb-4">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-            <div><h5 class="fw-bold mb-1">Popular Menu Items</h5><p class="analytics-hint mb-0">Top 10 by quantity in non-cancelled orders; includes unpaid orders</p></div>
-            <a class="btn btn-sm btn-outline-secondary" asp-page-handler="Export" asp-route-dataset="popular" asp-route-from="@Model.FromText" asp-route-to="@Model.ToText" asp-route-grouping="@Model.Grouping"><i class="bi bi-download me-1"></i> Export CSV</a>
+            <div><h5 class="fw-bold mb-1">Popular Menu Items</h5><p class="analytics-hint mb-0">Top 10 by quantity in non-cancelled orders (including unpaid orders). Category applies only here.</p></div>
+            <div class="d-flex flex-wrap gap-2 align-items-end">
+                <form method="get" asp-page="/Admin/Reports" class="d-flex flex-wrap align-items-end gap-2">
+                    <input type="hidden" name="from" value="@Model.FromText" />
+                    <input type="hidden" name="to" value="@Model.ToText" />
+                    <input type="hidden" name="grouping" value="@Model.Grouping" />
+                    <div><label for="categoryId" class="form-label small mb-1">Menu category</label>
+                        <select id="categoryId" name="categoryId" class="form-select form-select-sm" onchange="this.form.requestSubmit()">
+                            <option value="">All categories</option>
+                            @foreach (var category in Model.Categories)
+                            {
+                                <option value="@category.Id" selected="@(Model.CategoryId == category.Id)">@category.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <noscript><button type="submit" class="btn btn-sm btn-outline-dark">Filter</button></noscript>
+                </form>
+                <a class="btn btn-sm btn-outline-secondary" asp-page-handler="Export" asp-route-dataset="popular" asp-route-from="@Model.FromText" asp-route-to="@Model.ToText" asp-route-grouping="@Model.Grouping" asp-route-categoryId="@Model.CategoryId" asp-route-format="xlsx"><i class="bi bi-file-earmark-excel me-1"></i> Excel</a>
+                <a class="btn btn-sm btn-outline-secondary" asp-page-handler="Export" asp-route-dataset="popular" asp-route-from="@Model.FromText" asp-route-to="@Model.ToText" asp-route-grouping="@Model.Grouping" asp-route-categoryId="@Model.CategoryId">CSV</a>
+            </div>
         </div>
         <div class="table-responsive"><table class="table data-table align-middle mb-0">
-            <thead><tr><th>Item</th><th class="text-end">Quantity</th><th class="text-end">Order value (RM)</th></tr></thead>
+            <thead><tr><th>Item</th><th class="text-end">Quantity ordered</th></tr></thead>
             <tbody>
             @foreach (var item in report.PopularItems)
             {
-                <tr><td>@item.Name</td><td class="text-end">@item.Quantity</td><td class="text-end">@item.OrderValue.ToString("N2")</td></tr>
+                <tr><td>@item.Name</td><td class="text-end">@item.Quantity</td></tr>
             }
             @if (report.PopularItems.Count == 0)
             {
-                <tr><td colspan="3" class="text-center text-muted py-4">No menu-item orders for this period.</td></tr>
+                <tr><td colspan="2" class="text-center text-muted py-4">No menu-item orders for this period.</td></tr>
             }
             </tbody>
         </table></div>

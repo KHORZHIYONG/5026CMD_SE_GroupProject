@@ -22,6 +22,7 @@ namespace ResROMS.Data
         public DbSet<SystemSetting> SystemSettings { get; set; }
         public DbSet<Announcement> Announcements { get; set; }
         public DbSet<StaffShift> StaffShifts { get; set; }
+        public DbSet<Feedback> Feedbacks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -124,6 +125,9 @@ namespace ResROMS.Data
                 order.Property(o => o.Subtotal).HasPrecision(12, 2);
                 order.Property(o => o.DiscountAmount).HasPrecision(12, 2);
                 order.Property(o => o.TotalAmount).HasPrecision(12, 2);
+                order.Property(o => o.AppliedPromoCode).HasMaxLength(24);
+                order.Property(o => o.PaymentPreference).HasMaxLength(20).HasDefaultValue("None");
+                order.Property(o => o.PaymentReference).HasMaxLength(100);
                 order.HasIndex(o => new { o.Status, o.OrderedUtc });
                 order.HasIndex(o => new { o.CustomerId, o.OrderedUtc });
                 order.HasOne(o => o.Customer).WithMany()
@@ -136,6 +140,8 @@ namespace ResROMS.Data
                     .HasForeignKey(o => o.CreatedByUserId).OnDelete(DeleteBehavior.Restrict);
                 order.ToTable(table =>
                 {
+                    table.HasCheckConstraint("CK_Orders_PaymentPreference",
+                        "[PaymentPreference] IN ('None','Cash','Card','BankTransfer')");
                     table.HasCheckConstraint("CK_Orders_Status",
                         "[Status] IN ('New','Cooking','Ready','Completed','Cancelled')");
                     table.HasCheckConstraint("CK_Orders_Amounts",
@@ -229,6 +235,29 @@ namespace ResROMS.Data
                 shift.ToTable(table =>
                 {
                     table.HasCheckConstraint("CK_StaffShifts_Interval", "[EndLocal] > [StartLocal]");
+                });
+            });
+
+            modelBuilder.Entity<Feedback>(feedback =>
+            {
+                feedback.Property(f => f.Comment).HasMaxLength(500);
+                feedback.HasOne(f => f.Customer).WithMany()
+                    .HasForeignKey(f => f.CustomerId).OnDelete(DeleteBehavior.Restrict);
+                feedback.HasOne(f => f.Order).WithMany()
+                    .HasForeignKey(f => f.OrderId).OnDelete(DeleteBehavior.Restrict);
+                feedback.HasOne(f => f.Reservation).WithMany()
+                    .HasForeignKey(f => f.ReservationId).OnDelete(DeleteBehavior.Restrict);
+
+                // One review per order and one per reservation
+                feedback.HasIndex(f => f.OrderId).IsUnique().HasFilter("[OrderId] IS NOT NULL");
+                feedback.HasIndex(f => f.ReservationId).IsUnique().HasFilter("[ReservationId] IS NOT NULL");
+                feedback.HasIndex(f => new { f.CustomerId, f.CreatedUtc });
+
+                feedback.ToTable(table =>
+                {
+                    table.HasCheckConstraint("CK_Feedbacks_Rating", "[Rating] BETWEEN 1 AND 5");
+                    table.HasCheckConstraint("CK_Feedbacks_Target",
+                        "([OrderId] IS NOT NULL AND [ReservationId] IS NULL) OR ([OrderId] IS NULL AND [ReservationId] IS NOT NULL)");
                 });
             });
 

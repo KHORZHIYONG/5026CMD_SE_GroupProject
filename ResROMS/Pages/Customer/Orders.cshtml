@@ -1,0 +1,139 @@
+@page "/Customer/Orders"
+@model ResROMS.Pages.Customer.OrdersModel
+@using ResROMS.Services.CustomerSide
+@{
+    ViewData["Title"] = "My Orders";
+    Layout = "_CustomerLayout";
+    string[] steps = { "New", "Cooking", "Ready", "Completed" };
+}
+
+@section Styles {
+    <style>
+        .track { display: flex; gap: 6px; margin: 14px 0 6px; }
+        .track .step { flex: 1; height: 8px; border-radius: 4px; background: #e2e8f0; transition: background .4s; }
+        .track .step.done { background: #e85d04; }
+        .track-labels { display: flex; justify-content: space-between; font-size: .75rem; color: #718096; }
+    </style>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="page-title h2 mb-0">My orders</h1>
+    <a href="/Customer/Order" class="btn primary-action">New order</a>
+</div>
+
+@if (TempData["SuccessMessage"] is string ok) { <div class="alert alert-success">@ok</div> }
+@if (TempData["ErrorMessage"] is string err) { <div class="alert alert-danger">@err</div> }
+
+@if (Model.Upcoming.Count > 0)
+{
+    <div class="panel mb-3">
+        <h2 class="h6 fw-bold mb-2">Upcoming reservations <span class="text-muted fw-normal small">(live)</span></h2>
+        @foreach (var r in Model.Upcoming)
+        {
+            <div class="d-flex justify-content-between border-top py-2 small">
+                <span>@CustomerUi.Local(r.StartUtc) &middot; table @r.Table.TableNumber &middot; @r.PartySize guest(s)</span>
+                <span class="badge @CustomerUi.Badge(r.Status) js-res" data-id="@r.Id">@r.Status</span>
+            </div>
+        }
+        <a href="/Customer/Reservations" class="small">Manage reservations</a>
+    </div>
+}
+
+@if (!Model.Orders.Any()) { <div class="panel text-muted">You haven't placed any orders yet.</div> }
+
+@foreach (var o in Model.Orders)
+{
+    var idx = Array.IndexOf(steps, o.Status);
+    <div class="panel mb-3">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <div class="fw-bold">Order #@o.Id <span class="text-muted fw-normal small">&middot; @CustomerUi.Local(o.OrderedUtc)</span></div>
+                <div class="small text-muted">@(o.Table != null ? "Table " + o.Table.TableNumber : "Takeaway")@(o.ReservationId.HasValue ? " · linked to reservation #" + o.ReservationId : "")</div>
+            </div>
+            <span class="badge @CustomerUi.Badge(o.Status) js-status" data-id="@o.Id">@CustomerUi.OrderLabel(o.Status)</span>
+        </div>
+
+        @if (o.Status != "Cancelled")
+        {
+            <div class="track js-track" data-id="@o.Id">
+                @for (int i = 0; i < steps.Length; i++) { <div class="step @(i <= idx ? "done" : "")"></div> }
+            </div>
+            <div class="track-labels"><span>Received</span><span>Preparing</span><span>Ready</span><span>Completed</span></div>
+        }
+
+        <ul class="list-unstyled my-3 small">
+            @foreach (var i in o.Items) { <li>@i.Quantity &times; @i.ItemName <span class="text-muted">(@CustomerUi.Money(i.LineTotal))</span></li> }
+        </ul>
+
+        @if (o.DiscountAmount > 0)
+        {
+            <div class="small text-success mb-2">Promotion discount @(string.IsNullOrEmpty(o.AppliedPromoCode) ? "" : $"({o.AppliedPromoCode})"): -@CustomerUi.Money(o.DiscountAmount) (subtotal @CustomerUi.Money(o.Subtotal))</div>
+        }
+        @if (o.Payment == null && o.Status != "Cancelled")
+        {
+            <div class="rounded-3 bg-light border p-3 my-3">
+                <div class="fw-semibold small mb-2">How would you like to pay?</div>
+                <form method="post" asp-page-handler="PaymentPreference" asp-route-orderId="@o.Id" class="row g-2 align-items-end">
+                    <div class="col-md-5"><label class="form-label small">Method</label>
+                        <select name="method" class="form-select form-select-sm" aria-label="Payment preference">
+                            <option value="Cash" selected="@(o.PaymentPreference == "Cash")">Cash at counter</option>
+                            <option value="Card" selected="@(o.PaymentPreference == "Card")">Card at counter</option>
+                            <option value="BankTransfer" selected="@(o.PaymentPreference == "BankTransfer")">Bank transfer (staff verification)</option>
+                        </select></div>
+                    <div class="col-md-5"><label class="form-label small">Transfer reference (if used)</label>
+                        <input name="reference" class="form-control form-control-sm" maxlength="100" value="@o.PaymentReference" placeholder="Bank transfer reference" /></div>
+                    <div class="col-md-2"><button class="btn btn-sm btn-outline-primary w-100">Save</button></div>
+                </form>
+                <div class="small text-muted mt-2">This does not charge a card or send money. Please arrange payment with restaurant staff. Only staff can confirm a payment after verifying it.</div>
+                @if (o.PaymentPreference != "None") { <div class="small mt-1">Current selection: <strong>@o.PaymentPreference</strong> (awaiting staff verification)</div> }
+            </div>
+        }
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="small text-muted">
+                Total <strong class="text-dark">@CustomerUi.Money(o.TotalAmount)</strong> &middot; payment:
+                <span class="badge @CustomerUi.Badge(o.Payment?.Status ?? "Unpaid") js-pay" data-id="@o.Id">@(o.Payment?.Status ?? "Unpaid")</span>
+            </div>
+            @if (o.Status == "New")
+            {
+                <form method="post" asp-page-handler="Cancel" asp-route-id="@o.Id" onsubmit="return confirm('Cancel this order?');">
+                    <button class="btn btn-sm btn-outline-danger">Cancel order</button>
+                </form>
+            }
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        const steps = ['New', 'Cooking', 'Ready', 'Completed'];
+        const labels = { New: 'Received', Cooking: 'Being prepared' };
+        const badge = { New: 'text-bg-warning', Pending: 'text-bg-warning', Cooking: 'text-bg-info', Confirmed: 'text-bg-success', Ready: 'text-bg-success',
+                        Completed: 'text-bg-primary', Paid: 'text-bg-primary', Cancelled: 'text-bg-secondary', Refunded: 'text-bg-secondary', Unpaid: 'text-bg-light border' };
+
+        function setBadge(el, base, value, text) {
+            if (!el || el.textContent.trim() === text) return false;
+            el.textContent = text;
+            el.className = 'badge ' + (badge[value] || 'text-bg-light') + ' ' + base;
+            return true;
+        }
+
+        // Real-time tracking: ask the server for fresh statuses every 5 seconds
+        async function refresh() {
+            try {
+                const res = await fetch('/Customer/Orders?handler=Status');
+                const data = await res.json();
+                data.orders.forEach(o => {
+                    const changed = setBadge(document.querySelector('.js-status[data-id="' + o.id + '"]'), 'js-status', o.status, labels[o.status] || o.status);
+                    setBadge(document.querySelector('.js-pay[data-id="' + o.id + '"]'), 'js-pay', o.payment, o.payment);
+                    const track = document.querySelector('.js-track[data-id="' + o.id + '"]');
+                    if (changed && track) {
+                        const idx = steps.indexOf(o.status);
+                        track.querySelectorAll('.step').forEach((s, i) => s.classList.toggle('done', i <= idx));
+                    }
+                });
+                data.reservations.forEach(r => setBadge(document.querySelector('.js-res[data-id="' + r.id + '"]'), 'js-res', r.status, r.status));
+            } catch (e) { }
+        }
+        setInterval(refresh, 5000);
+    </script>
+}

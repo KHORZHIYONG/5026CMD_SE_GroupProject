@@ -1,0 +1,373 @@
+﻿@page "/Staff/Orders"
+@model ResROMS.Pages.Staff.OrdersModel
+@{
+    ViewData["Title"] = "Orders";
+}
+
+@section Styles {
+    <style>
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .kanban-board {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+            min-height: 70vh;
+        }
+
+        .kanban-column {
+            flex: 0 0 300px;
+            background: #f8fafc;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            max-height: 100%;
+            border: 1px solid #e2e8f0;
+        }
+
+        .kanban-header {
+            padding: 15px;
+            font-weight: 700;
+            border-bottom: 2px solid;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-new {
+            background: #fffaf0;
+            color: #dd6b20;
+            border-bottom-color: #dd6b20;
+        }
+
+        .header-cooking {
+            background: #ebf8ff;
+            color: #3182ce;
+            border-bottom-color: #3182ce;
+        }
+
+        .header-ready {
+            background: #f0fff4;
+            color: #38a169;
+            border-bottom-color: #38a169;
+        }
+
+        .kanban-body {
+            padding: 15px;
+            overflow-y: auto;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .order-card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border-left: 4px solid transparent;
+        }
+
+        .border-new {
+            border-left-color: #dd6b20;
+        }
+
+        .border-cooking {
+            border-left-color: #3182ce;
+        }
+
+        .border-ready {
+            border-left-color: #38a169;
+        }
+
+        .order-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .table-badge {
+            background: #2d3748;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .order-items-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            color: #4a5568;
+        }
+
+            .order-items-list li {
+                padding: 4px 0;
+                border-bottom: 1px dashed #e2e8f0;
+            }
+
+                .order-items-list li:last-child {
+                    border-bottom: none;
+                }
+
+        .btn-status {
+            width: 100%;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+        }
+
+        .btn-primary-custom {
+            background-color: #e85d04;
+            border: none;
+            font-weight: 600;
+            border-radius: 8px;
+            color: white;
+        }
+
+            .btn-primary-custom:hover {
+                background-color: #dc2f02;
+                color: white;
+            }
+
+        .menu-line-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+    </style>
+}
+
+@Html.AntiForgeryToken()
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Orders</h1>
+        <p class="text-muted small mb-0">Take new orders and track them through to completion. Admin sees the same orders.</p>
+    </div>
+    <button class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#newOrderModal">
+        <i class="bi bi-plus-lg me-1"></i> New Order
+    </button>
+</div>
+
+@if (TempData["SuccessMessage"] is string success)
+{
+    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @success
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] is string error)
+{
+    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+        <i class="bi bi-exclamation-circle-fill me-2"></i> @error
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="kanban-board">
+    <!-- NEW -->
+    <div class="kanban-column">
+        <div class="kanban-header header-new">
+            <span><i class="bi bi-bell-fill me-2"></i>New</span>
+            <span class="badge bg-white text-dark rounded-pill">@Model.ActiveOrders.Count(o => o.Status == "New")</span>
+        </div>
+        <div class="kanban-body">
+            @foreach (var order in Model.ActiveOrders.Where(o => o.Status == "New"))
+            {
+                <div class="order-card border-new">
+                    <div class="order-meta">
+                        <span class="table-badge">@order.TableLabel</span>
+                        <span class="text-muted small fw-bold">#@order.Id</span>
+                    </div>
+                    <div class="small text-muted mb-2"><i class="bi bi-person me-1"></i>@order.EnteredBy &middot; @order.CustomerName</div>
+                    <ul class="order-items-list">
+                        @foreach (var line in order.Lines)
+                        {
+                            <li>@line.Quantity x @line.Name</li>
+                        }
+                    </ul>
+                    <div class="small fw-bold text-dark mb-2">RM @order.TotalAmount.ToString("F2")</div>
+                    <form asp-page-handler="UpdateStatus" method="post">
+                        <input type="hidden" name="orderId" value="@order.Id" />
+                        <input type="hidden" name="newStatus" value="Cooking" />
+                        <button type="submit" class="btn btn-outline-primary btn-status">Send to Kitchen</button>
+                    </form>
+                    <form asp-page-handler="UpdateStatus" method="post">
+                        <input type="hidden" name="orderId" value="@order.Id" />
+                        <input type="hidden" name="newStatus" value="Cancelled" />
+                        <button type="submit" class="btn btn-outline-danger btn-status" onclick="return confirm('Cancel this order?');">Cancel Order</button>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- COOKING -->
+    <div class="kanban-column">
+        <div class="kanban-header header-cooking">
+            <span><i class="bi bi-fire me-2"></i>Cooking</span>
+            <span class="badge bg-white text-dark rounded-pill">@Model.ActiveOrders.Count(o => o.Status == "Cooking")</span>
+        </div>
+        <div class="kanban-body">
+            @foreach (var order in Model.ActiveOrders.Where(o => o.Status == "Cooking"))
+            {
+                <div class="order-card border-cooking">
+                    <div class="order-meta">
+                        <span class="table-badge">@order.TableLabel</span>
+                        <span class="text-muted small fw-bold">#@order.Id</span>
+                    </div>
+                    <ul class="order-items-list">
+                        @foreach (var line in order.Lines)
+                        {
+                            <li>@line.Quantity x @line.Name</li>
+                        }
+                    </ul>
+                    <form asp-page-handler="UpdateStatus" method="post">
+                        <input type="hidden" name="orderId" value="@order.Id" />
+                        <input type="hidden" name="newStatus" value="Ready" />
+                        <button type="submit" class="btn btn-outline-success btn-status">Mark Ready to Serve</button>
+                    </form>
+                    <form asp-page-handler="UpdateStatus" method="post">
+                        <input type="hidden" name="orderId" value="@order.Id" />
+                        <input type="hidden" name="newStatus" value="Cancelled" />
+                        <button type="submit" class="btn btn-outline-danger btn-status" onclick="return confirm('Cancel this order?');">Cancel Order</button>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- READY -->
+    <div class="kanban-column">
+        <div class="kanban-header header-ready">
+            <span><i class="bi bi-check-circle-fill me-2"></i>Ready to Serve</span>
+            <span class="badge bg-white text-dark rounded-pill">@Model.ActiveOrders.Count(o => o.Status == "Ready")</span>
+        </div>
+        <div class="kanban-body">
+            @foreach (var order in Model.ActiveOrders.Where(o => o.Status == "Ready"))
+            {
+                <div class="order-card border-ready">
+                    <div class="order-meta">
+                        <span class="table-badge">@order.TableLabel</span>
+                        <span class="text-muted small fw-bold">#@order.Id</span>
+                    </div>
+                    <div class="small text-muted mb-2"><i class="bi bi-person me-1"></i>@order.EnteredBy</div>
+                    <ul class="order-items-list">
+                        @foreach (var line in order.Lines)
+                        {
+                            <li>@line.Quantity x @line.Name</li>
+                        }
+                    </ul>
+                    <div class="small fw-bold text-dark mb-2">RM @order.TotalAmount.ToString("F2") &middot; @order.PaymentStatus</div>
+                    <form asp-page-handler="UpdateStatus" method="post">
+                        <input type="hidden" name="orderId" value="@order.Id" />
+                        <input type="hidden" name="newStatus" value="Completed" />
+                        <button type="submit" class="btn btn-outline-dark btn-status">Mark Completed</button>
+                    </form>
+                    <a href="/Staff/Billing?orderId=@order.Id" class="btn btn-primary-custom btn-status">Go to Billing</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal: New Order -->
+<div class="modal fade" id="newOrderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">New Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-page-handler="CreateOrder" method="post">
+                <div class="modal-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Table</label>
+                            <select name="NewOrder.TableId" class="form-select">
+                                <option value="">Takeaway / no table</option>
+                                @foreach (var t in Model.TableChoices)
+                                {
+                                    <option value="@t.Id">@t.Label</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Customer (optional)</label>
+                            <select name="NewOrder.CustomerId" class="form-select">
+                                <option value="">Walk-in</option>
+                                @foreach (var c in Model.CustomerChoices)
+                                {
+                                    <option value="@c.Id">@c.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <label class="form-label fw-bold">Dishes</label>
+                    <p class="small text-muted mb-2">Pick each dish once and change its quantity.</p>
+                    <div id="orderLinesContainer">
+                        <div class="menu-line-row">
+                            <select name="NewOrder.Lines[0].MenuItemId" class="form-select">
+                                <option value="">Select a dish</option>
+                                @foreach (var m in Model.MenuChoices)
+                                {
+                                    <option value="@m.Id">@m.Name - RM @m.Price.ToString("F2")</option>
+                                }
+                            </select>
+                            <input type="number" name="NewOrder.Lines[0].Quantity" class="form-control" style="max-width: 90px;" value="1" min="1" max="99" />
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-dark mt-2" onclick="addOrderLine()">
+                        <i class="bi bi-plus-lg"></i> Add Another Dish
+                    </button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom">Submit Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let lineIndex = 1;
+        function addOrderLine() {
+            const container = document.getElementById('orderLinesContainer');
+            const firstRow = container.querySelector('.menu-line-row');
+            const newRow = firstRow.cloneNode(true);
+
+            newRow.querySelectorAll('select, input').forEach(el => {
+                const name = el.getAttribute('name');
+                if (name) {
+                    el.setAttribute('name', name.replace(/Lines\[\d+\]/, `Lines[${lineIndex}]`));
+                }
+                if (el.tagName === 'INPUT') {
+                    el.value = 1;
+                } else {
+                    el.value = '';
+                }
+            });
+
+            container.appendChild(newRow);
+            lineIndex++;
+        }
+    </script>
+}

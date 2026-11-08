@@ -20,6 +20,7 @@ public sealed class OrdersModel : PageModel
     public sealed class ManualOrderForm
     {
         public int? CustomerId { get; set; }
+        public string? PromoCode { get; set; }
         public int? TableId { get; set; }
         public int? Item1 { get; set; }
         public int Qty1 { get; set; } = 1;
@@ -51,7 +52,7 @@ public sealed class OrdersModel : PageModel
             return RedirectToPage();
         }
         var result = await _orders.CreateAsync(new CreateOrderInput(NewOrder.CustomerId,
-            NewOrder.TableId, null, lines, userId));
+            NewOrder.TableId, null, lines, userId, NewOrder.PromoCode));
         TempData[result.Success ? "SuccessMessage" : "ErrorMessage"] = result.Message;
         return RedirectToPage();
     }

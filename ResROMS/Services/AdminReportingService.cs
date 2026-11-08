@@ -57,7 +57,8 @@ public sealed class AdminReportingService : IAdminReportingService
         // ReportRange is supplied by a PageModel but defensively validate it here too.
         if (range.To < range.From || range.To.DayNumber - range.From.DayNumber > 365
             || range.From.Year < 2000 || range.To.Year > 2100
-            || range.GroupBy is not ("Daily" or "Weekly" or "Monthly"))
+            || range.GroupBy is not ("Daily" or "Weekly" or "Monthly")
+            || (range.CategoryId.HasValue && range.CategoryId.Value <= 0))
             throw new ArgumentOutOfRangeException(nameof(range), "Invalid reporting period.");
 
         var fromUtc = ReservationClock.ToUtc(range.From.ToDateTime(TimeOnly.MinValue));
@@ -85,7 +86,8 @@ public sealed class AdminReportingService : IAdminReportingService
         // a record constructor's properties isn't translatable by all EF providers.
         var popularRows = await _db.OrderItems.AsNoTracking()
             .Where(i => i.Order.OrderedUtc >= fromUtc && i.Order.OrderedUtc < untilUtc
-                && i.Order.Status != "Cancelled")
+                && i.Order.Status != "Cancelled"
+                && (!range.CategoryId.HasValue || i.MenuItem.CategoryId == range.CategoryId.Value))
             .GroupBy(i => i.MenuItemId)
             .Select(g => new
             {

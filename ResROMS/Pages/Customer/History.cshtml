@@ -1,0 +1,83 @@
+@page "/Customer/History"
+@model ResROMS.Pages.Customer.HistoryModel
+@using ResROMS.Services
+@using ResROMS.Services.CustomerSide
+@{
+    ViewData["Title"] = "History";
+    Layout = "_CustomerLayout";
+}
+
+<h1 class="page-title h2 mb-3">History &amp; payments</h1>
+<p class="text-muted">All times are Malaysia time (MYT).</p>
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-res">Reservations (@Model.Reservations.Count)</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-orders">Orders (@Model.Orders.Count)</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-pay">Payments (@Model.Payments.Count)</button></li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="tab-res">
+        <div class="panel table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr><th>Date &amp; time</th><th>Table</th><th>Guests</th><th>Status</th></tr></thead>
+                <tbody>
+                    @foreach (var r in Model.Reservations)
+                    {
+                        <tr>
+                            <td>@r.StartLocal.ToString("d MMM yyyy, h:mm tt") &ndash; @r.EndLocal.ToString("h:mm tt")</td>
+                            <td>@r.TableNumber</td>
+                            <td>@r.PartySize</td>
+                            <td><span class="badge @CustomerUi.Badge(r.Status)">@r.Status</span></td>
+                        </tr>
+                    }
+                    @if (Model.Reservations.Count == 0) { <tr><td colspan="4" class="text-muted">No reservations yet.</td></tr> }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="tab-orders">
+        <div class="panel table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr><th>#</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th><th>Payment</th></tr></thead>
+                <tbody>
+                    @foreach (var o in Model.Orders)
+                    {
+                        <tr>
+                            <td>@o.Id</td>
+                            <td>@CustomerUi.Local(o.OrderedUtc)</td>
+                            <td class="small">@string.Join(", ", o.Items.Select(i => $"{i.Quantity}× {i.ItemName}"))</td>
+                            <td>@CustomerUi.Money(o.TotalAmount) @if (o.DiscountAmount > 0) { <small class="text-success">(saved @CustomerUi.Money(o.DiscountAmount))</small> }</td>
+                            <td><span class="badge @CustomerUi.Badge(o.Status)">@CustomerUi.OrderLabel(o.Status)</span></td>
+                            <td><span class="badge @CustomerUi.Badge(o.Payment?.Status ?? "Unpaid")">@(o.Payment?.Status ?? "Unpaid")</span></td>
+                        </tr>
+                    }
+                    @if (Model.Orders.Count == 0) { <tr><td colspan="6" class="text-muted">No orders yet.</td></tr> }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="tab-pay">
+        <div class="panel table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr><th>Recorded</th><th>Order</th><th>Method</th><th>Reference</th><th>Amount</th><th>Status</th></tr></thead>
+                <tbody>
+                    @foreach (var p in Model.Payments)
+                    {
+                        <tr>
+                            <td>@CustomerUi.Local(p.RecordedUtc)</td>
+                            <td>#@p.OrderId</td>
+                            <td>@(p.Method == "BankTransfer" ? "Bank transfer" : p.Method)</td>
+                            <td>@p.Reference</td>
+                            <td>@CustomerUi.Money(p.Amount)</td>
+                            <td><span class="badge @CustomerUi.Badge(p.Status)">@p.Status</span>@if (p.RefundedUtc.HasValue) { <div class="small text-muted">@CustomerUi.Local(p.RefundedUtc.Value)</div> }</td>
+                        </tr>
+                    }
+                    @if (Model.Payments.Count == 0) { <tr><td colspan="6" class="text-muted">No payments recorded yet.</td></tr> }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

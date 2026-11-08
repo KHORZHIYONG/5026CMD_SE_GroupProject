@@ -2,11 +2,12 @@ namespace ResROMS.Services;
 
 public sealed record OrderLineInput(int MenuItemId, int Quantity);
 public sealed record CreateOrderInput(int? CustomerId, int? TableId, int? ReservationId,
-    IReadOnlyList<OrderLineInput> Lines, int? CreatedByUserId);
+    IReadOnlyList<OrderLineInput> Lines, int? CreatedByUserId, string? PromoCode = null);
 public sealed record OrderLineSummary(string Name, int Quantity, decimal UnitPrice, decimal Total);
 public sealed record OrderSummary(int Id, string TableLabel, string CustomerName,
     string EnteredBy, string Status, DateTime OrderedLocal, decimal Subtotal,
-    decimal TotalAmount, string PaymentStatus, IReadOnlyList<OrderLineSummary> Lines);
+    decimal TotalAmount, string PaymentStatus, IReadOnlyList<OrderLineSummary> Lines,
+    decimal DiscountAmount = 0m, string PaymentPreference = "None", string? PaymentReference = null, string? AppliedPromoCode = null);
 public sealed record MenuChoice(int Id, string Name, decimal Price, string CategoryName);
 public sealed record AccountChoice(int Id, string Name);
 public sealed record TableChoice(int Id, string Label);

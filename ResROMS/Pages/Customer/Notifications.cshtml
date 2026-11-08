@@ -1,0 +1,43 @@
+@page "/Customer/Notifications"
+@model ResROMS.Pages.Customer.NotificationsModel
+@using ResROMS.Services.CustomerSide
+@{
+    ViewData["Title"] = "Notifications";
+    Layout = "_CustomerLayout";
+    string Icon(string type) => type switch
+    {
+        "Reservation" => "bi-calendar-check",
+        "Order" => "bi-bag",
+        "Payment" => "bi-credit-card",
+        "Promotion" => "bi-megaphone",
+        _ => "bi-bell"
+    };
+}
+
+@section Styles {
+    <style>
+        .note { display: flex; gap: 14px; }
+        .note.new { border-left: 4px solid #e85d04; }
+        .note i { font-size: 1.4rem; color: #e85d04; }
+    </style>
+}
+
+<h1 class="page-title h2 mb-1">Notifications</h1>
+<p class="text-muted">Reservation confirmations, order updates, payment confirmations and promotions from the last @CustomerNotificationFeed.WindowDays days.</p>
+
+@if (!Model.Items.Any())
+{
+    <div class="panel text-muted">Nothing new yet.</div>
+}
+
+@foreach (var n in Model.Items)
+{
+    <div class="panel py-3 mb-2 note @(n.WhenUtc > Model.LastSeenUtc ? "new" : "")">
+        <i class="bi @Icon(n.Type)"></i>
+        <div>
+            <div class="fw-bold">@n.Title</div>
+            <div>@n.Message</div>
+            <div class="text-muted small">@CustomerUi.Local(n.WhenUtc)</div>
+        </div>
+    </div>
+}

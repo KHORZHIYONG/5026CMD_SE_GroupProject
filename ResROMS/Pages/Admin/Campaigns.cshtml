@@ -25,6 +25,8 @@
     .campaign-actions{display:flex;gap:8px;flex-wrap:wrap}
     .campaign-actions form{display:inline}
     .edit-panel{background:#f8fafc;border-radius:9px;border:1px solid #e2e8f0;padding:16px;margin-top:15px}
+    .promo-field-error { display:none; color:#ad2727; font-size:.8rem; margin-top:4px; font-weight:600; }
+    .promo-field-error.visible { display:block; }
 </style>
 }
 
@@ -61,6 +63,8 @@ else
     <div class="row g-4">
         @foreach (var campaign in Model.Campaigns)
         {
+            var editing = Model.EditCampaignId == campaign.Id;
+            var edited = editing ? Model.Form : null;
             var statusBadge = campaign.Status switch
             {
                 "Active" => "badge-active",
@@ -89,7 +93,7 @@ else
                     <p class="text-muted small flex-grow-1">@campaign.Description</p>
                     <div class="mb-2">
                         <div class="small fw-bold mb-1">Promo Code</div>
-                        <div class="promo-code-box">@(campaign.PromoCode ?? "No code (manual/auto offer)")</div>
+                        <div class="promo-code-box" data-campaign-id="@campaign.Id" data-promo-code="@campaign.PromoCode">@(campaign.PromoCode ?? "No code (manual/auto offer)")</div>
                     </div>
                     <div class="small mb-2 text-muted">
                         Discount: <strong class="text-dark">
@@ -129,14 +133,18 @@ else
                             <button type="submit" class="btn btn-outline-danger btn-sm" disabled="@(campaign.UsageCount > 0)">Delete</button>
                         </form>
                     </div>
-                    <div class="collapse" id="editCampaign-@campaign.Id">
+                    <div class="collapse @(editing ? "show" : "")" id="editCampaign-@campaign.Id">
                         <div class="edit-panel">
                             <h6 class="fw-bold">Edit campaign</h6>
                             <form method="post" asp-page-handler="Edit">
+                                @if (editing)
+                                {
+                                    <div asp-validation-summary="All" class="alert alert-danger small" role="alert"></div>
+                                }
                                 <input type="hidden" name="CampaignId" value="@campaign.Id" />
                                 <div class="mb-2">
                                     <label class="form-label small fw-bold">Name</label>
-                                    <input class="form-control form-control-sm" name="Form.Name" value="@campaign.Name" maxlength="120" required />
+                                    <input class="form-control form-control-sm" name="Form.Name" value="@(edited?.Name ?? campaign.Name)" maxlength="120" required />
                                 </div>
                                 <div class="row g-2 mb-2">
                                     <div class="col-md-6">
@@ -144,13 +152,13 @@ else
                                         <select class="form-select form-select-sm" name="Form.Type">
                                             @foreach (var type in new[] { "Discount", "Happy Hour", "Seasonal" })
                                             {
-                                                <option value="@type" selected="@(type == campaign.Type)">@type</option>
+                                                <option value="@type" selected="@(type == (edited?.Type ?? campaign.Type))">@type</option>
                                             }
                                         </select>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label small fw-bold">Promo Code (optional)</label>
-                                        <input class="form-control form-control-sm" name="Form.PromoCode" value="@campaign.PromoCode" maxlength="24" />
+                                        <input class="form-control form-control-sm" name="Form.PromoCode" value="@(edited?.PromoCode ?? campaign.PromoCode)" maxlength="24" data-promo-edit="@campaign.Id" />
                                     </div>
                                 </div>
                                 <div class="row g-2 mb-2">
@@ -159,28 +167,28 @@ else
                                         <select class="form-select form-select-sm" name="Form.DiscountType">
                                             @foreach (var type in new[] { "None", "Percentage", "FixedAmount" })
                                             {
-                                                <option value="@type" selected="@(type == campaign.DiscountType)">@(type == "FixedAmount" ? "Fixed amount (RM)" : type)</option>
+                                                <option value="@type" selected="@(type == (edited?.DiscountType ?? campaign.DiscountType))">@(type == "FixedAmount" ? "Fixed amount (RM)" : type)</option>
                                             }
                                         </select>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label small fw-bold">Discount value</label>
-                                        <input type="number" class="form-control form-control-sm" name="Form.DiscountValue" value="@campaign.DiscountValue.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)" min="0" step="0.01" required />
+                                        <input type="number" class="form-control form-control-sm" name="Form.DiscountValue" value="@((edited?.DiscountValue ?? campaign.DiscountValue).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))" min="0" step="0.01" required />
                                     </div>
                                 </div>
                                 <div class="row g-2 mb-2">
                                     <div class="col-md-6">
                                         <label class="form-label small fw-bold">Start</label>
-                                        <input type="date" class="form-control form-control-sm" name="Form.StartDate" value="@campaign.StartDate.ToString("yyyy-MM-dd")" required />
+                                        <input type="date" class="form-control form-control-sm" name="Form.StartDate" value="@((edited?.StartDate ?? campaign.StartDate).ToString("yyyy-MM-dd"))" required />
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label small fw-bold">End</label>
-                                        <input type="date" class="form-control form-control-sm" name="Form.EndDate" value="@campaign.EndDate.ToString("yyyy-MM-dd")" required />
+                                        <input type="date" class="form-control form-control-sm" name="Form.EndDate" value="@((edited?.EndDate ?? campaign.EndDate).ToString("yyyy-MM-dd"))" required />
                                     </div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label small fw-bold">Description and rules</label>
-                                    <textarea class="form-control form-control-sm" name="Form.Description" rows="3" maxlength="1000" required>@campaign.Description</textarea>
+                                    <textarea class="form-control form-control-sm" name="Form.Description" rows="3" maxlength="1000" required>@(edited?.Description ?? campaign.Description)</textarea>
                                 </div>
                                 <button type="submit" class="btn btn-primary-custom btn-sm">Save changes</button>
                             </form>
@@ -217,7 +225,7 @@ else
                         </div>
                         <div class="col-12">
                             <label asp-for="Form.PromoCode" class="form-label fw-bold">Promotion code (optional)</label>
-                            <input asp-for="Form.PromoCode" class="form-control" maxlength="24" placeholder="e.g. WEEKEND20" />
+                            <input asp-for="Form.PromoCode" class="form-control" maxlength="24" placeholder="e.g. WEEKEND20" data-promo-edit="0" />
                             <small class="text-muted">Codes are case-insensitive and must be unique. Leave blank for no-code campaigns.</small>
                             <span asp-validation-for="Form.PromoCode" class="text-danger small d-block"></span>
                         </div>
@@ -256,6 +264,33 @@ else
         </div>
     </div>
 </div>
+
+<script>
+// Immediate duplicate-code feedback. The server and SQL unique index remain
+// authoritative, including against two simultaneous submissions.
+(() => {
+    const currentCodes = Array.from(document.querySelectorAll('.promo-code-box'))
+        .map(el => ({ id: Number(el.dataset.campaignId), code: (el.dataset.promoCode || '').trim().toUpperCase() }))
+        .filter(c => c.code);
+    document.querySelectorAll('input[name="Form.PromoCode"]').forEach(field => {
+        const message = document.createElement('div');
+        message.className = 'promo-field-error';
+        message.setAttribute('role', 'status');
+        field.insertAdjacentElement('afterend', message);
+        const validate = () => {
+            const value = field.value.trim().toUpperCase();
+            const owner = Number(field.dataset.promoEdit || 0);
+            const duplicate = value && currentCodes.some(c => c.id !== owner && c.code?.toUpperCase() === value);
+            message.textContent = duplicate ? 'This promo code is already used. Choose a different code.' : '';
+            message.classList.toggle('visible', !!duplicate);
+            field.setCustomValidity(duplicate ? 'Promotion code already exists.' : '');
+        };
+        field.addEventListener('input', validate);
+        field.addEventListener('blur', validate);
+        field.form?.addEventListener('submit', validate);
+    });
+})();
+</script>
 
 @if (ViewData["ReopenCreateModal"] is true)
 {

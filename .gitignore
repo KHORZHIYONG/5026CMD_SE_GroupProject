@@ -1,1 +1,9 @@
-.vs/
+
+**/bin/
+**/obj/
+**/.vs/
+*.csproj.user
+*.user
+secrets.json
+*.mdf
+*.ldf

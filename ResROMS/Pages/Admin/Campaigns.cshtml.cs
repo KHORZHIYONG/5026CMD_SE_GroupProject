@@ -10,6 +10,7 @@ public sealed class CampaignsModel : PageModel
     public CampaignsModel(ICampaignManagementService service) => _service = service;
 
     public IReadOnlyList<CampaignSummary> Campaigns { get; private set; } = [];
+    public int? EditCampaignId { get; private set; }
 
     [BindProperty]
     public CampaignInput Form { get; set; } = new();
@@ -32,8 +33,18 @@ public sealed class CampaignsModel : PageModel
         return Page();  // Preserve the posted form and validation errors.
     }
 
-    public async Task<IActionResult> OnPostEditAsync() =>
-        RedirectWithResult(await _service.EditAsync(CampaignId, Form));
+    public async Task<IActionResult> OnPostEditAsync()
+    {
+        if (ModelState.IsValid)
+        {
+            var result = await _service.EditAsync(CampaignId, Form);
+            if (result.Success) return RedirectWithResult(result);
+            ModelState.AddModelError("Form.PromoCode", result.Message);
+        }
+        Campaigns = await _service.GetAllAsync();
+        EditCampaignId = CampaignId;
+        return Page(); // Preserve every edit field and show its panel on failure.
+    }
 
     public async Task<IActionResult> OnPostPauseAsync() =>
         RedirectWithResult(await _service.SetEnabledAsync(CampaignId, false));

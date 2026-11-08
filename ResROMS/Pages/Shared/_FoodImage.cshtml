@@ -1,0 +1,11 @@
+@model ResROMS.Services.CustomerSide.FoodImageView
+@{
+    var url = ResROMS.Services.CustomerSide.CustomerUi.ImageOrNull(Model.Url);
+}
+<div class="food-img @(Model.Small ? "sm" : "")">
+    <i class="bi bi-egg-fried"></i>
+    @if (url != null)
+    {
+        <img src="@url" alt="@Model.Alt" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" />
+    }
+</div>

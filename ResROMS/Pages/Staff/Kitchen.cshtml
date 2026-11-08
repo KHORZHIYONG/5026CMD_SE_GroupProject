@@ -1,0 +1,288 @@
+﻿@page "/Staff/Kitchen"
+@model ResROMS.Pages.Staff.KitchenModel
+@{
+    ViewData["Title"] = "Kitchen";
+}
+
+@section Styles {
+    <style>
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .kitchen-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @@media (max-width: 900px) {
+            .kitchen-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .k-col {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px;
+            min-height: 50vh;
+        }
+
+        .k-col-title {
+            font-weight: 800;
+            font-size: 1.15rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+            border-bottom: 3px solid;
+        }
+
+        .k-new .k-col-title {
+            color: #dd6b20;
+            border-color: #dd6b20;
+        }
+
+        .k-cooking .k-col-title {
+            color: #3182ce;
+            border-color: #3182ce;
+        }
+
+        .ticket {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-left: 6px solid #cbd5e0;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+
+        .k-new .ticket {
+            border-left-color: #dd6b20;
+        }
+
+        .k-cooking .ticket {
+            border-left-color: #3182ce;
+        }
+
+        .ticket.late {
+            border-left-color: #e53e3e !important;
+            background: #fff5f5;
+        }
+
+        .ticket-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 8px;
+        }
+
+        .ticket-table {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #2d3748;
+        }
+
+        .ticket-id {
+            color: #718096;
+            font-size: 0.85rem;
+        }
+
+        .ticket-wait {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #4a5568;
+        }
+
+        .ticket.late .ticket-wait {
+            color: #c53030;
+        }
+
+        .ticket-lines {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 12px 0;
+        }
+
+            .ticket-lines li {
+                font-size: 1.05rem;
+                padding: 3px 0;
+                display: flex;
+                gap: 10px;
+            }
+
+            .ticket-lines .qty {
+                font-weight: 800;
+                min-width: 38px;
+                color: #e85d04;
+            }
+
+        .btn-kitchen {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+        }
+
+        .btn-start {
+            background: #3182ce;
+        }
+
+            .btn-start:hover {
+                background: #2b6cb0;
+            }
+
+        .btn-ready {
+            background: #38a169;
+        }
+
+            .btn-ready:hover {
+                background: #2f855a;
+            }
+
+        .ready-strip {
+            margin-top: 20px;
+            background: #f0fff4;
+            border: 1px solid #c6f6d5;
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+        .ready-chip {
+            display: inline-block;
+            background: #fff;
+            border: 1px solid #9ae6b4;
+            border-radius: 20px;
+            padding: 4px 14px;
+            margin: 4px 6px 4px 0;
+            font-weight: 600;
+            color: #276749;
+        }
+
+        .empty {
+            text-align: center;
+            color: #a0aec0;
+            padding: 40px 10px;
+        }
+    </style>
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title mb-0">Kitchen</h1>
+        <p class="text-muted small mb-0">Oldest orders are at the top. This page refreshes by itself every 15 seconds.</p>
+    </div>
+    <a href="/Staff/Orders?all=true" class="btn btn-outline-dark btn-sm"><i class="bi bi-list-check me-1"></i> All orders</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="kitchen-grid">
+
+    <!-- NEW: waiting for the kitchen to start -->
+    <div class="k-col k-new">
+        <div class="k-col-title"><span>NEW</span><span>@Model.NewOrders.Count</span></div>
+        @foreach (var o in Model.NewOrders)
+        {
+            var minutes = (int)Math.Max(0, (Model.NowLocal - o.OrderedLocal).TotalMinutes);
+            <div class="ticket @(minutes >= 10 ? "late" : "")">
+                <div class="ticket-top">
+                    <div><span class="ticket-table">@o.TableLabel</span> <span class="ticket-id">#@o.Id</span></div>
+                    <span class="ticket-wait"><i class="bi bi-clock me-1"></i>@minutes min</span>
+                </div>
+                <ul class="ticket-lines">
+                    @foreach (var line in o.Lines)
+                    {
+                        <li><span class="qty">@line.Quantity x</span><span>@line.Name</span></li>
+                    }
+                </ul>
+                <form asp-page-handler="UpdateStatus" method="post">
+                    <input type="hidden" name="orderId" value="@o.Id" />
+                    <input type="hidden" name="newStatus" value="Cooking" />
+                    <button type="submit" class="btn-kitchen btn-start"><i class="bi bi-fire me-2"></i>Start cooking</button>
+                </form>
+            </div>
+        }
+        @if (!Model.NewOrders.Any())
+        {
+            <div class="empty"><i class="bi bi-check2-circle" style="font-size: 2rem;"></i><div>No new orders</div></div>
+        }
+    </div>
+
+    <!-- COOKING: the kitchen is working on it -->
+    <div class="k-col k-cooking">
+        <div class="k-col-title"><span>COOKING</span><span>@Model.CookingOrders.Count</span></div>
+        @foreach (var o in Model.CookingOrders)
+        {
+            var minutes = (int)Math.Max(0, (Model.NowLocal - o.OrderedLocal).TotalMinutes);
+            <div class="ticket @(minutes >= 25 ? "late" : "")">
+                <div class="ticket-top">
+                    <div><span class="ticket-table">@o.TableLabel</span> <span class="ticket-id">#@o.Id</span></div>
+                    <span class="ticket-wait"><i class="bi bi-clock me-1"></i>@minutes min</span>
+                </div>
+                <ul class="ticket-lines">
+                    @foreach (var line in o.Lines)
+                    {
+                        <li><span class="qty">@line.Quantity x</span><span>@line.Name</span></li>
+                    }
+                </ul>
+                <form asp-page-handler="UpdateStatus" method="post">
+                    <input type="hidden" name="orderId" value="@o.Id" />
+                    <input type="hidden" name="newStatus" value="Ready" />
+                    <button type="submit" class="btn-kitchen btn-ready"><i class="bi bi-bell me-2"></i>Ready to serve</button>
+                </form>
+            </div>
+        }
+        @if (!Model.CookingOrders.Any())
+        {
+            <div class="empty"><i class="bi bi-fire" style="font-size: 2rem;"></i><div>Nothing cooking</div></div>
+        }
+    </div>
+</div>
+
+<!-- READY: finished, waiting for a waiter to serve it -->
+<div class="ready-strip">
+    <div class="fw-bold mb-2" style="color:#276749;"><i class="bi bi-check-circle me-1"></i> Ready, waiting to be served (@Model.ReadyOrders.Count)</div>
+    @foreach (var o in Model.ReadyOrders)
+    {
+        <span class="ready-chip">@o.TableLabel #@o.Id</span>
+    }
+    @if (!Model.ReadyOrders.Any())
+    {
+        <span class="text-muted small">None right now.</span>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Reload the board every 15 seconds so new orders appear without pressing refresh.
+        // We skip the reload while the tab is hidden, to avoid useless requests.
+        setInterval(function() {
+            if (!document.hidden) { location.reload(); }
+        }, 15000);
+    </script>
+}

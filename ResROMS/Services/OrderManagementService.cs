@@ -30,7 +30,8 @@ public sealed class OrderManagementService : IOrderManagementService
             o.Status, ReservationClock.ToLocal(o.OrderedUtc), o.Subtotal, o.TotalAmount,
             o.Payment?.Status ?? "Unpaid",
             o.Items.OrderBy(i => i.Id).Select(i => new OrderLineSummary(
-                i.ItemName, i.Quantity, i.UnitPrice, i.LineTotal)).ToArray())).ToArray();
+                i.ItemName, i.Quantity, i.UnitPrice, i.LineTotal)).ToArray(),
+            o.DiscountAmount, o.PaymentPreference, o.PaymentReference, o.AppliedPromoCode)).ToArray();
     }
 
     public async Task<IReadOnlyList<PaymentSummary>> GetPaymentsAsync()
@@ -131,14 +132,45 @@ public sealed class OrderManagementService : IOrderManagementService
         try
         {
             order.Subtotal = order.Items.Sum(i => i.LineTotal);
-            order.TotalAmount = order.Subtotal;
+            var promoCode = input.PromoCode?.Trim().ToUpperInvariant();
+            Campaign? campaign = null;
+            if (!string.IsNullOrWhiteSpace(promoCode))
+            {
+                if (promoCode.Length > 24) return Fail("Promotion code must be at most 24 characters.");
+                var today = ReservationClock.NowLocal.Date;
+                campaign = await _db.Campaigns.AsNoTracking().FirstOrDefaultAsync(c => c.PromoCode == promoCode);
+                if (campaign is null || !campaign.IsEnabled || campaign.StartDate.Date > today || campaign.EndDate.Date < today)
+                    return Fail("This promotion code does not exist or is not active today.");
+                order.DiscountAmount = campaign.DiscountType switch
+                {
+                    "Percentage" => decimal.Round(order.Subtotal * campaign.DiscountValue / 100m, 2, MidpointRounding.AwayFromZero),
+                    "FixedAmount" => Math.Min(order.Subtotal, campaign.DiscountValue),
+                    _ => 0m
+                };
+                if (order.DiscountAmount <= 0m)
+                    return Fail("This promotion code does not offer a discount for the selected order.");
+                order.AppliedPromoCode = promoCode;
+            }
+            order.TotalAmount = order.Subtotal - order.DiscountAmount;
             if (order.TotalAmount > 9999999999.99m)
                 return Fail("Order total exceeds the supported amount.");
+            // Both order and the campaign redemption count must succeed together.
+            await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             _db.Orders.Add(order);
             await _db.SaveChangesAsync();
-            return Ok($"Order #{order.Id} created and stored in SQL Server.");
+            if (campaign is not null)
+            {
+                var today = ReservationClock.NowLocal.Date;
+                var updated = await _db.Campaigns
+                    .Where(c => c.Id == campaign.Id && c.IsEnabled && c.StartDate <= today && c.EndDate >= today)
+                    .ExecuteUpdateAsync(x => x.SetProperty(c => c.UsageCount, c => c.UsageCount + 1));
+                if (updated != 1) return Fail("Promotion is no longer active. Please retry the order.");
+            }
+            await tx.CommitAsync();
+            return Ok($"Order #{order.Id} created. Total RM {order.TotalAmount:F2}" +
+                (order.DiscountAmount > 0 ? $" after RM {order.DiscountAmount:F2} promotion discount." : "."));
         }
-        catch (DbUpdateException ex)
+        catch (Exception ex) when (ex is DbUpdateException || ex is SqlException)
         {
             _logger.LogWarning(ex, "Failed to create order");
             return Fail("Could not save the order. Check menu, table and customer selections.");
