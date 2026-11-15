@@ -1,0 +1,71 @@
+@page "/Customer/Feedback"
+@model ResROMS.Pages.Customer.FeedbackModel
+@using ResROMS.Services.CustomerSide
+@{
+    ViewData["Title"] = "Feedback";
+    Layout = "_CustomerLayout";
+}
+
+@section Styles { <style>.stars { color: #f6ad55; letter-spacing: 2px; }</style> }
+
+<h1 class="page-title h2 mb-3">Ratings &amp; feedback</h1>
+
+@if (TempData["SuccessMessage"] is string ok) { <div class="alert alert-success">@ok</div> }
+@if (TempData["ErrorMessage"] is string err) { <div class="alert alert-danger">@err</div> }
+
+<h2 class="h5 fw-bold mb-3">Rate your recent experiences</h2>
+
+@if (!Model.PendingOrders.Any() && !Model.PendingReservations.Any())
+{
+    <div class="panel text-muted mb-3">Nothing to rate right now. Completed orders and visits appear here.</div>
+}
+
+@foreach (var o in Model.PendingOrders)
+{
+    <div class="panel mb-3">
+        <div class="fw-bold">Order #@o.Id <span class="text-muted fw-normal small">&middot; @CustomerUi.Local(o.OrderedUtc)</span></div>
+        <div class="small text-muted mb-2">@string.Join(", ", o.Items.Select(i => $"{i.Quantity}× {i.ItemName}"))</div>
+        <form method="post" asp-page-handler="Submit" class="row g-2">
+            <input type="hidden" name="kind" value="order" />
+            <input type="hidden" name="refId" value="@o.Id" />
+            <div class="col-md-2">
+                <select name="rating" class="form-select" required>
+                    <option value="">Rating</option><option value="5">5 – Excellent</option><option value="4">4 – Good</option>
+                    <option value="3">3 – OK</option><option value="2">2 – Poor</option><option value="1">1 – Bad</option>
+                </select>
+            </div>
+            <div class="col-md-8"><input name="comment" class="form-control" maxlength="500" placeholder="Tell us more (optional)" /></div>
+            <div class="col-md-2"><button class="btn btn-dark w-100">Submit</button></div>
+        </form>
+    </div>
+}
+
+@foreach (var r in Model.PendingReservations)
+{
+    <div class="panel mb-3">
+        <div class="fw-bold">Dining visit &middot; @CustomerUi.Local(r.StartUtc) <span class="text-muted fw-normal small">Table @r.Table.TableNumber</span></div>
+        <form method="post" asp-page-handler="Submit" class="row g-2 mt-1">
+            <input type="hidden" name="kind" value="reservation" />
+            <input type="hidden" name="refId" value="@r.Id" />
+            <div class="col-md-2">
+                <select name="rating" class="form-select" required>
+                    <option value="">Rating</option><option value="5">5 – Excellent</option><option value="4">4 – Good</option>
+                    <option value="3">3 – OK</option><option value="2">2 – Poor</option><option value="1">1 – Bad</option>
+                </select>
+            </div>
+            <div class="col-md-8"><input name="comment" class="form-control" maxlength="500" placeholder="Tell us more (optional)" /></div>
+            <div class="col-md-2"><button class="btn btn-dark w-100">Submit</button></div>
+        </form>
+    </div>
+}
+
+<h2 class="h5 fw-bold mt-4 mb-3">Your past feedback</h2>
+@foreach (var f in Model.Past)
+{
+    <div class="panel py-3 mb-2">
+        <span class="stars">@(new string('★', f.Rating))@(new string('☆', 5 - f.Rating))</span>
+        <span class="text-muted small ms-2">@(f.OrderId.HasValue ? "Order #" + f.OrderId : "Dining visit") &middot; @CustomerUi.Local(f.CreatedUtc)</span>
+        @if (!string.IsNullOrWhiteSpace(f.Comment)) { <div class="mt-1">@f.Comment</div> }
+    </div>
+}
+@if (!Model.Past.Any()) { <div class="text-muted">No feedback submitted yet.</div> }
