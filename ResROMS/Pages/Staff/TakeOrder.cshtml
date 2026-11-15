@@ -8,7 +8,7 @@
     <style>
         .order-wrap { display: flex; gap: 24px; align-items: flex-start; }
         .menu-side { flex: 1; min-width: 0; }
-        .bill-side { width: 400px; background: #fff; border-radius: 14px; padding: 20px; position: sticky; top: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+        .bill-side { width: 520px; background: #fffaf6; border: 1px solid #fed7aa; border-radius: 14px; padding: 16px; position: sticky; top: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); display: flex; flex-direction: column; max-height: calc(100vh - 120px); overflow-y: auto; }
         .cat-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
         .cat-pill { border: 1px solid #cbd5e1; background: #fff; border-radius: 99px; padding: 8px 18px; font-weight: 600; }
         .cat-pill.on { background: #121418; color: #fff; border-color: #121418; }
@@ -28,6 +28,37 @@
         .q-btn { width: 44px; height: 44px; font-size: 1.3rem; }
         .bill-total { font-size: 1.8rem; font-weight: 700; }
         .readback { background: #f1f5f9; border-radius: 10px; padding: 12px; font-size: .95rem; }
+        /* Bill panel: scrollable dish list and colour */
+        #billLines { flex: 1 1 auto; min-height: 120px; overflow-y: auto; padding-right: 4px; }
+        .bill-side h2 { background: #121418; color: #fff; margin: -16px -16px 8px; padding: 12px 16px; border-bottom: 4px solid #c2410c; border-radius: 14px 14px 0 0; }
+        .bill-line { background: #fff; border: 1px solid #fde4d3; border-radius: 10px; margin: 6px 0; padding: 10px; }
+        .bill-line:nth-child(even) { background: #fff4ea; }
+        .bill-total { color: #c2410c; }
+        .readback { background: #fff1e6; border: 1px solid #fed7aa; }
+        #billLines::-webkit-scrollbar { width: 8px; }
+        #billLines::-webkit-scrollbar-track { background: #fde4d3; border-radius: 8px; }
+        #billLines::-webkit-scrollbar-thumb { background: #c2410c; border-radius: 8px; }
+        /* Keep everything on one screen */
+        .bill-side > * { flex-shrink: 0; }
+        .bill-side > #billLines { flex-shrink: 1; }
+        .bill-side .mt-3 { margin-top: .6rem !important; }
+        .bill-side .mb-3 { margin-bottom: .5rem !important; }
+        .bill-side .form-text, .bill-side .small.text-muted { font-size: .75rem; margin-top: 2px; }
+        .bill-total { font-size: 1.5rem; }
+        /* Coloured plus and minus buttons */
+        .bill-side .q-btn { --bs-btn-color: #c2410c; --bs-btn-border-color: #c2410c; --bs-btn-hover-bg: #c2410c; --bs-btn-hover-border-color: #c2410c; --bs-btn-hover-color: #fff; --bs-btn-active-bg: #9a3412; --bs-btn-active-border-color: #9a3412; --bs-btn-active-color: #fff; color: #c2410c; border: 2px solid #c2410c; background: #fff; font-weight: 700; }
+        .bill-side .q-btn:hover, .bill-side .q-btn:active { background: #c2410c; color: #fff; border-color: #c2410c; }
+        /* Roomier dish list: smaller cards and a wider panel */
+        .bill-side .q-btn { width: 36px; height: 36px; padding: 0; font-size: 1.1rem; }
+        .bill-side .bill-line { padding: 8px 10px; }
+        .bill-side .bill-line .mt-2 { margin-top: .3rem !important; }
+        .bill-side .bill-line label { display: none; }
+        .bill-side .bill-line .form-control { padding: .25rem .6rem; font-size: .9rem; }
+        .bill-side .readback { font-size: .85rem; padding: 8px 10px; }
+        .bill-side .small.text-muted { font-size: .72rem; }
+        .bill-side .form-text { display: none; }
+        /* Hide the quick note buttons: use the Add a note box only */
+        .bill-side .bill-line .flex-wrap { display: none !important; }
     </style>
 }
 
