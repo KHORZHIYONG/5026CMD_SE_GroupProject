@@ -1,0 +1,58 @@
+@page "/Customer/Profile"
+@model ResROMS.Pages.Customer.ProfileModel
+@using ResROMS.Services
+@{
+    ViewData["Title"] = "My Profile";
+    Layout = "_CustomerLayout";
+}
+
+<h1 class="page-title h2 mb-3">My profile</h1>
+
+@if (TempData["SuccessMessage"] is string ok) { <div class="alert alert-success">@ok</div> }
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="panel">
+            <h2 class="h5 fw-bold mb-3">Personal information</h2>
+            <form method="post" asp-page-handler="SaveDetails">
+                <div class="mb-3"><label class="form-label">Email</label><input class="form-control" value="@Model.Email" disabled /></div>
+                <div class="mb-3">
+                    <label asp-for="Details.FullName" class="form-label"></label>
+                    <input asp-for="Details.FullName" class="form-control" />
+                    <span asp-validation-for="Details.FullName" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Details.Phone" class="form-label">Phone</label>
+                    <input asp-for="Details.Phone" class="form-control" />
+                    <span asp-validation-for="Details.Phone" class="text-danger small"></span>
+                </div>
+                <p class="text-muted small">Member since @ReservationClock.ToLocal(Model.JoinedUtc).ToString("d MMM yyyy")</p>
+                <button class="btn primary-action">Save changes</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel">
+            <h2 class="h5 fw-bold mb-3">Change password</h2>
+            <form method="post" asp-page-handler="ChangePassword">
+                <div class="mb-3">
+                    <label asp-for="Password.Current" class="form-label">Current password</label>
+                    <input asp-for="Password.Current" class="form-control" autocomplete="current-password" />
+                    <span asp-validation-for="Password.Current" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Password.New" class="form-label">New password</label>
+                    <input asp-for="Password.New" class="form-control" autocomplete="new-password" />
+                    <div class="form-text">At least 12 characters.</div>
+                    <span asp-validation-for="Password.New" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Password.Confirm" class="form-label">Confirm new password</label>
+                    <input asp-for="Password.Confirm" class="form-control" autocomplete="new-password" />
+                    <span asp-validation-for="Password.Confirm" class="text-danger small"></span>
+                </div>
+                <button class="btn btn-outline-dark">Update password</button>
+            </form>
+        </div>
+    </div>
+</div>
